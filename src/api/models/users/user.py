@@ -11,3 +11,9 @@ class User(BaseModel):
   emailConfirmed : Optional[bool] = False
   logged : Optional[bool] = True
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+  username: Optional[str] = None
