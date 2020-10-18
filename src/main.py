@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 
-from api.routers import users
+from api.routers import users, room_endpoints
 from api.routers import privileged
 from api.models.base import db, DB_User
 from api.handlers.pass_handler import *
@@ -21,6 +21,7 @@ db.generate_mapping(create_tables=True)
 
 
 app.include_router(users.router)
+app.include_router(room_endpoints.router)
 # en el siguiente router, se encuentran algunas funciones que sirven para
 # testear el correcto funcionamiento de los tokens, pues los endpoints
 # que estan tienen como dependencia la funcion verify_token definida mas arriba

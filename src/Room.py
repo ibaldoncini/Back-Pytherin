@@ -34,17 +34,17 @@ class Room:
 
         Maybe it should return something
         """
-        if (self.isOpen):
+        if (self.is_open()):
             self.current_users.append(user)
 
-    def isOpen(self):
+    def is_open(self):
         """Returns true when a user can join, false otherwise"""
         return (len(self.current_users) < self.max_players and self.status == RoomStatus.PREGAME)
 
     def user_leave(self, user):
         """
         Removes a user from the current users list.
-        Then passes ownership or destroys the room if necessary
+        Then passes ownership or removes the room from the hub if necessary
         """
         self.current_users.remove(user)
         if (self.current_users == []):
@@ -55,9 +55,14 @@ class Room:
         elif (self.owner == user):
             self.owner = self.current_users[0]
 
-    def getName(self):
+    def get_name(self):
         """ Room name getter"""
         return self.name
 
-    def getUserCount(self):
+    def get_user_count(self):
+        """User count getter"""
         return len(self.current_users)
+
+    def start_game(self):
+        self.status = RoomStatus.IN_GAME
+        # Obviously is not finished.
