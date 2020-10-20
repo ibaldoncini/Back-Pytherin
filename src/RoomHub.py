@@ -8,7 +8,7 @@ class RoomHub:
     This class contains all the created Rooms (see Room.py), and provides functions
     related to listing and finding rooms.
 
-    Maybe it shouldn't be a class as it contains minimal state, and some methods, 
+    Maybe it shouldn't be a class as it contains minimal state, and some methods,
     also, it will only be instanciated once.
     """
 
@@ -29,21 +29,21 @@ class RoomHub:
         """
         Returns the first room with the corresponding name or None if it doesn't exist
         """
-        room = next((r for r in self.rooms if r.getName() == name), None)
+        room = next((r for r in self.rooms if r.get_name() == name), None)
         return room
 
     def all_rooms(self):
         """
         Returns a list of all the room names in use
         """
-        names = map(lambda r: r.getName(), self.rooms)
+        names = map(lambda r: r.get_name(), self.rooms)
         return list(names)
 
     def open_rooms(self):
         """
         Returns a list of all the rooms that a user can join
         """
-        names = filter(lambda r: r.isOpen(), self.rooms)
+        names = filter(lambda r: r.is_open(), self.rooms)
         return list(names)
 
     def number_of_rooms(self):

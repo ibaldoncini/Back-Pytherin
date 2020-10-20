@@ -1,5 +1,6 @@
-from typing import List
+from typing import List, Dict
 from enum import Enum, unique
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 
 @unique
@@ -17,43 +18,48 @@ class Room:
     It should support the chat, joining, starting a game, etc
 
     Currently identifying users by their e-mail(str). Maybe not the most optimal approach.
-    Try to use type decorators whenever possible.
+    Using type decorators whenever possible.
     """
+    # game: Game -> when game starts
 
     def __init__(self, name, max_players, owner):
         self.name: str = name
         self.max_players: int = max_players
         self.owner: str = owner
-        self.current_users: List[str] = []
+        self.connections: Dict[str, WebSocket] = {}
         self.status: RoomStatus = RoomStatus.PREGAME
 
-    def user_join(self, user: str):
-        """ 
+    async def user_connect(self, user: str, websocket: WebSocket):
+        """
         Add  'user' to the current users list
-        user_join shouldn't be called when isOpen == false, but doublecheck anyway.
+        user_connect shouldn't be called when isOpen == false, but doublecheck anyway.
 
-        Maybe it should return something
+        Maybe it should return something (confirmation? error?)
         """
         if (self.is_open()):
-            self.current_users.append(user)
+            await websocket.accept()
+            self.connections[user] = websocket
 
     def is_open(self):
-        """Returns true when a user can join, false otherwise"""
-        return (len(self.current_users) < self.max_players and self.status == RoomStatus.PREGAME)
+        """
+        Returns true when a user can join, false otherwise
+        """
+        return (len(self.connections) <
+                self.max_players and self.status == RoomStatus.PREGAME)
 
-    def user_leave(self, user):
+    def user_disconnect(self, user):
         """
         Removes a user from the current users list.
         Then passes ownership or removes the room from the hub if necessary
         """
-        self.current_users.remove(user)
-        if (self.current_users == []):
+        disconnected_user = self.connections.pop(user, None)
+        if (self.connections == {}):
             # WIP
             # server.remove_room(self) -> remove myself from list of rooms
             # del self -> destroy myself
             pass
         elif (self.owner == user):
-            self.owner = self.current_users[0]
+            self.owner = next(iter(self.connections))
 
     def get_name(self):
         """ Room name getter"""
@@ -61,8 +67,12 @@ class Room:
 
     def get_user_count(self):
         """User count getter"""
-        return len(self.current_users)
+        return len(self.connections)
 
     def start_game(self):
         self.status = RoomStatus.IN_GAME
         # Obviously is not finished.
+
+    async def broadcast(self, message: str):
+        for user in self.connections:
+            await self.connections[user].send_text(message)

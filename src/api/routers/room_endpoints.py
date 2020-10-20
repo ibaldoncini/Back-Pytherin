@@ -1,45 +1,53 @@
-from fastapi import APIRouter, Depends, HTTPException
-from datetime import datetime, timedelta
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, Query, status, Response
 from pony.orm import db_session, select
 from typing import Optional, List
-
-from api.models.room_models import RoomCreationRequest, JoinRoomRequest
+from api.models.base import db
+from api.models.room_models import RoomCreationRequest
 from Room import Room
 from RoomHub import RoomHub
+from fastapi.responses import HTMLResponse
+
 
 router = APIRouter()
 
 hub = RoomHub()
 
 
-@router.post("/newroom")
-async def create_room(room_info: RoomCreationRequest):
-    # Check user confirmed email
-    # Check for name availability
-    global hub
+@router.post("/room/new", status_code=status.HTTP_201_CREATED)
+async def create_room(room_info: RoomCreationRequest, response: Response):
+    """
+    Endpoint for creating a new room.
+
+    Possible respones:\n
+            201 when succesfully created.
+            401 when email not confirmed.
+            409 when the room name is already in use.
+            500 raises exception when multiple users have the same e-mail.
+    """
+    owner = room_info.email
+    room_name = room_info.name
+    max_players = room_info.max_players
+
+    with db_session:
+        try:
+            email_confirmed = db.get(
+                "select emailConfirmed from DB_User where email = $owner")
+        except BaseException:
+            raise HTTPException(
+                status_code=500, detail="Something went wrong")
+
     names = hub.all_rooms()
-    if room_info.name in names:
-        raise HTTPException(status_code=409, detail="Room name already in use")
-    else:
-        new_room = Room(room_info.name, room_info.max_players, room_info.email)
-        hub.add_room(new_room)
-        return {"message": "Created room"}
-
-
-@router.put("/join")
-async def join_room(join_info: JoinRoomRequest):
-    # Check user confirmed email
-    global hub
-
-    room = hub.get_room_by_name(join_info.room_name)
 
     message: str
-    if (room == None):
-        message = "Room doesn't exist"
-    elif (not room.isOpen()):
-        message = "Room is full or in game"
+    if not email_confirmed:
+        message = "E-mail not confirmed"
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+    elif room_name in names:
+        message = "Room name already in use"
+        response.status_code = status.HTTP_409_CONFLICT
     else:
-        room.user_join(join_info.user)
-        message = "joined"
+        new_room = Room(room_name, max_players, owner)
+        hub.add_room(new_room)
+        message = "Room created succesfully"
 
     return {"message": message}
