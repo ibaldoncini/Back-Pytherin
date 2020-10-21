@@ -1,2 +1,13 @@
 __pycache/
 *.pyc
+../.metals/
+../.vscode/
+../back-SV.code-workspace
+../bin/
+../cx_Oracle-doc/
+../lib/
+../lib64
+../pyvenv.cfg
+../share/
+example.sqlite
+../tests/

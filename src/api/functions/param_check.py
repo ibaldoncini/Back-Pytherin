@@ -1,8 +1,7 @@
-#passwordCheker
-
 from pony.orm import db_session,select
 from api.models.users.user import User
 from api.models.base import DB_User
+
 
 def check_username_not_in_database (u : User):
   with db_session: 

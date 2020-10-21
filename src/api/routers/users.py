@@ -1,4 +1,4 @@
-from api.models.base import DB_User,db
+from api.models.base import DB_User, Validation_Tuple,db
 from api.functions.param_check import check_email_not_in_database,check_username_not_in_database
 from api.functions.emailvalidation import Validation
 from api.models.users.user import User
@@ -45,25 +45,33 @@ async def register(user : User):
                         icon = user.icon,
                         creationDate = datetime.today().strftime('%Y-%m-%d'))
 
-    validator = Validation()
+    validator = Validation(user.username)
     validator.send_mail(user.email)
 
-    return {"User Registered:": str(new_user.id) + " An email verification has" +
-            "been sent to " + user.email}
+    return {"User Registered:": str(new_user.id) + " A verification email has" +
+            " been sent to " + user.email}
   else:
-    registered_username_msg = "Username already registered "
-    registered_email_msg = "Email aready registered "
     msg = ""
     if not check_username_not_in_database(user):
-      msg += registered_username_msg
-      raise HTTPException(status_code=409,detail=registered_username_msg)
+      msg += "Username already registered "
+      raise HTTPException(status_code=409,detail="Username already registered ")
     elif not check_email_not_in_database(user):
-      msg += registered_email_msg
-      raise HTTPException(status_code=409,detail=registered_email_msg)
+      msg += "Email already registered"
+      raise HTTPException(status_code=409,detail="Email aready registered")
 
     return {msg}
 
-      
+
+@router.put("/validate/",tags=["Users"])
+@db_session
+async def validate_user (username : str,code : str):
+  for data in db.select(t for t in Validation_Tuple if t.username == username):
+    if code == data.code:
+      for user in db.select(u for u in DB_User if u.username == username):
+        user.emailConfirmed = True
+        return {"User confirmed!"}
+  raise HTTPException(status_code=500,detail="No user " + username +"found")
+
 
 @router.get("/users",tags=["Users"])
 @db_session
@@ -79,12 +87,16 @@ async def dump():
   return {"Users: " : res.__str__()}
 
 
-#Esto es como super inseguro no?
-#TODO
-'''
-@router.post("users/validation_code")
-async def get_validation_code ():
-'''
+@router.get("/users/dumpvalidcodes")
+@db_session
+async def dump_validation ():
+  res = []
+  for row in db.select("* from Validation_Tuple"):
+    res.append((row.username,row.code)) 
+  
+  print(res.__str__())
+  return {"Users: " : res.__str__()}
+
 
 
     

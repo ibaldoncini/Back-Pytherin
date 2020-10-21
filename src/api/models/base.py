@@ -9,7 +9,7 @@ class DB_User(db.Entity):
     id = PrimaryKey(int,auto=True)
     username = Required(str)
     email = Required(EmailStr)
-    password = Required(str)
+    hashedPassword = Required(str)
     emailConfirmed = Required(bool)
     logged = Required(bool)
     icon = Optional(str)
@@ -17,3 +17,7 @@ class DB_User(db.Entity):
 
 #db.bind('sqlite','example.sqlite', create_db=True)
 #db.generate_mapping(create_tables=True)
+
+class Validation_Tuple (db.Entity):
+    username = PrimaryKey(str)
+    code = Required(str)
