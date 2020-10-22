@@ -7,8 +7,14 @@
 # What if no user exists with that email?
 # Or if a required parameter is missing?
 
+
+"""
+Always erase database before running this test
+"""
 from fastapi.testclient import TestClient
 from main import app
+from pony.orm import db_session, select, commit
+from api.models.base import db, DB_User
 
 client = TestClient(app)
 
@@ -23,7 +29,6 @@ client.post(
         "emailConfirmed": "true",
         "logged": "true"
     }
-
 )
 
 
@@ -65,10 +70,30 @@ def test_create_room_11_players():
     assert response.status_code == 422
 
 
-def test_create_room_bad_json():
+def test_create_room_missing_parameter():
     response = client.post(
         "/room/new",
         json={"max_players": "11",
               "email": "test@test.com"}
     )
     assert response.status_code == 422
+
+
+def test_create_room_email_not_confirmed():
+    with db_session:
+        try:
+            user = DB_User.get(email="test@test.com")
+            user.set(emailConfirmed=False)
+            commit()
+        except:
+            return None
+
+    response = client.post(
+        "/room/new",
+        json={"name": "foobarfoobar", "max_players": "5",
+              "email": "test@test.com"}
+    )
+    assert response.status_code == 401
+    assert response.json() == {"detail": "E-mail not confirmed"}
+
+# def test_create_room_not_logged():

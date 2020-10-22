@@ -32,7 +32,7 @@ class Room:
     async def user_connect(self, user: str, websocket: WebSocket):
         """
         Add  'user' to the current users list
-        user_connect shouldn't be called when isOpen == false, but doublecheck anyway.
+        user_connect shouldn't be called when is_open == false, but doublecheck anyway.
 
         Maybe it should return something (confirmation? error?)
         """
@@ -47,7 +47,7 @@ class Room:
         return (len(self.connections) <
                 self.max_players and self.status == RoomStatus.PREGAME)
 
-    def user_disconnect(self, user):
+    def user_disconnect(self, user: str):
         """
         Removes a user from the current users list.
         Then passes ownership or removes the room from the hub if necessary
