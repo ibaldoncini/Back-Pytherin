@@ -14,7 +14,7 @@ class User(BaseModel):
     username: str
     email: str
     icon: str = None
-    emailConfirmed: Optional[bool] = False
+    email_confirmed: Optional[bool] = False
 
 
 class Token(BaseModel):

@@ -8,21 +8,30 @@ from pydantic import Field, BaseModel
 from api.models.base import db, DB_User
 from api.models.users.user import User, Token, TokenData
 from api.utils.login import *
-from api.handlers.passwordCheck import pass_checker
+from api.handlers.pass_handler import pass_checker
 from api.handlers.authentication import *
 
 
 router = APIRouter()
 
 
-@router.get("/users/all")
-@db_session
-async def dump():
-    '''
-    Endpoint that show in console the actual state of the users database
-    '''
-    print(db.select("username,email,emailconfirmed,logged from DB_User")[:])
-    return ()
+@router.post("/users/register", status_code=201)
+async def register(user: User, password: str = Body(..., embed=True)):
+    """
+    Endpoint that allows to register users into the database.
+    """
+    try:
+        with db_session:
+            new_user = DB_User(username=user.username,
+                               email=user.email,
+                               hashed_password=get_password_hash(password),
+                               email_confirmed=user.email_confirmed,
+                               icon=user.icon,
+                               creation_date=datetime.today().strftime('%Y-%m-%d'))
+        return {"User registered:": new_user.username}
+    except:
+        raise HTTPException(
+            status_code=400, detail="Mail address already in use")
 
 
 @router.post("/users", response_model=Token, status_code=200)
@@ -47,40 +56,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             "token_type": "bearer"}
 
 
-@router.post("/users/register", status_code=201)
-async def register(user: User, password: str = Body(..., embed=True)):
-    """
-    endpoint that allows to register users into the database.
-    """
-    if pass_checker(password):
-        try:
-            with db_session:
-                new_user = DB_User(username=user.username,
-                                   email=user.email,
-                                   hashedPassword=get_password_hash(password),
-                                   emailConfirmed=user.emailConfirmed,
-                                   icon=user.icon,
-                                   creationDate=datetime.today().strftime('%Y-%m-%d'))
-            return {"User registered:": new_user.username}
-        except:
-            raise HTTPException(
-                status_code=400, detail="Mail address already in use")
-    else:
-        raise HTTPException(
-            status_code=400, detail="Invalid password")
-
-
-@router.get("/users/me", status_code=200)
-async def read_users(current_user: User = Depends(get_current_active_user)):
-    '''
-    API endpoint that serves for testing the token validation. Returns info about
-    the user that logged in if validation went well
-    '''
-    return (current_user)
-
-
-@router.put("/users/refresh", response_model=Token, status_code=200)
+@router.put("/users/refresh", response_model=Token, status_code=201)
 async def refresh_token(email: str = Depends(valid_credentials)):
+    """
+    Endpoint that creates a new web token.
+    As the funciton "updates" creating a new token, it has the PUT method. 
+    Need to be logged in to use.
+    """
     if not email:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

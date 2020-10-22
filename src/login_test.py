@@ -16,7 +16,7 @@ def test_load_user1():
             "user": {'username': 'test1',
                      'email': 'test1@mail.com',
                      'icon': 'string.png',
-                     'emailConfirmed': True,
+                     'email_confirmed': True,
                      },
             "password": "Heladera63"
         }
@@ -32,7 +32,7 @@ def test_load_user2():
             "user": {'username': 'test2',
                      'email': 'test2@mail.com',
                      'icon': 'string.png',
-                     'emailConfirmed': False,
+                     'email_confirmed': False,
                      },
             "password": "Heladera63"
         }
@@ -48,7 +48,7 @@ def test_load_user3():
             "user": {'username': 'test3',
                      'email': 'test3@mail.com',
                      'icon': 'string.png',
-                     'emailConfirmed': True,
+                     'email_confirmed': True,
                      },
             "password": "Heladera63"
         }
@@ -154,14 +154,40 @@ def test_login_and_refresh_token():
     token: str = rta['access_token']
     token_type: str = 'Bearer '
     head: str = token_type + token
-    response_token = client.get(
+    response_token = client.put(
+        "/users/refresh",
+        headers={
+            "accept": "application/json",
+            "Authorization": head
+        }
+    )
+    assert response_token.status_code == 201
+
+
+def test_login_and_get():
+    response_login = client.post(
+        "/users",
+        data={
+            "grant_type": '',
+            "username": 'test1@mail.com',
+            "password": 'Heladera63',
+            "scope": '',
+            "client_id": '',
+            "client_secret": ''}
+    )
+    assert response_login.status_code == 200
+    rta: dict = response_login.json()
+    token: str = rta['access_token']
+    token_type: str = 'Bearer '
+    head: str = token_type + token
+    response_get = client.get(
         "/users/me",
         headers={
             "accept": "application/json",
             "Authorization": head
         }
     )
-    assert response_token.status_code == 200
+    assert response_get.status_code == 200
 
 
 """

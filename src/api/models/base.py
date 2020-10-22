@@ -13,7 +13,7 @@ class DB_User(db.Entity):
     '''
     username = Required(str)
     email = PrimaryKey(str)
-    hashedPassword = Required(str)
-    emailConfirmed = Required(bool)
+    hashed_password = Required(str)
+    email_confirmed = Required(bool)
     icon = Optional(str)
-    creationDate = Required(date)
+    creation_date = Required(date)
