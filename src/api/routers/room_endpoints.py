@@ -22,7 +22,7 @@ async def create_room(room_info: RoomCreationRequest):
             201 when succesfully created.
             401 when email not confirmed.
             409 when the room name is already in use.
-            500 raises exception when multiple users have the same e-mail.
+            500 when there's an internal error in the database.
     """
     owner = room_info.email
     room_name = room_info.name
