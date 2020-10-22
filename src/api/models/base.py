@@ -11,11 +11,9 @@ class DB_User(db.Entity):
     no recolecta un ID para que de esta manera ponyORM tome el 
     email como primary key.
     '''
-    #id = PrimaryKey(int, auto=True)
     username = Required(str)
     email = PrimaryKey(str)
     hashedPassword = Required(str)
     emailConfirmed = Required(bool)
-    logged = Required(bool)
     icon = Optional(str)
     creationDate = Required(date)

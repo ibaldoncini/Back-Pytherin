@@ -1,7 +1,7 @@
 # login.py
 from fastapi import Depends, HTTPException, status
 from datetime import datetime, timedelta
-from pony.orm import db_session, select
+from pony.orm import db_session, select, commit
 from typing import Optional
 from passlib.context import CryptContext
 
@@ -21,20 +21,6 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-@db_session
-def actualize_user_status(email: str):
-    print("yes")
-    try:
-        user = db.get("* from DB_User where email = $email")
-        user.set(logged=True)
-        print("done!")
-        commit()
-        return True
-    except:
-        print("something went wrong")
-        return False
-
-
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     email = valid_credentials(token)
     if email is None:
@@ -43,7 +29,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
                             headers={"WWW-Authenticate": "Bearer"},
                             )
     keys = ('username', 'email', 'hashedPassword',
-            'emailConfirmed', 'logged', 'icon', 'creationDate')
+            'emailConfirmed', 'icon', 'creationDate')
     with db_session:
         try:
             user_tuple = db.get(
@@ -66,7 +52,7 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
 @db_session
 def authenticate_user(mail: str, password: str):
     keys = ('username', 'email', 'hashedPassword',
-            'emailConfirmed', 'logged', 'icon', 'creationDate')
+            'emailConfirmed', 'icon', 'creationDate')
     try:
         user_tuple = db.get("select * from DB_User where email = $mail")
     except:

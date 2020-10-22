@@ -25,19 +25,10 @@ async def dump():
     return ()
 
 
-@router.get("/users", status_code=200)
-async def read_users(current_user: User = Depends(get_current_active_user)):
-    '''
-    API endpoint that serves for the token validation. Returns info about
-    the user that logged in if validation went well
-    '''
-    return (current_user)
-
-
 @router.post("/users", response_model=Token, status_code=200)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     '''
-    LogIn endpoint, first, authenticates the user checking that the 
+    LogIn endpoint, first, authenticates the user checking that the
     email and the password submitted by the user are correct.
     Then it creates a valid token for the user.
     '''
@@ -52,7 +43,57 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     access_token = create_access_token(
         data={"sub": user['email']}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token,
+            "token_type": "bearer"}
+
+
+@router.post("/users/register", status_code=201)
+async def register(user: User, password: str = Body(..., embed=True)):
+    """
+    endpoint that allows to register users into the database.
+    """
+    if pass_checker(password):
+        try:
+            with db_session:
+                new_user = DB_User(username=user.username,
+                                   email=user.email,
+                                   hashedPassword=get_password_hash(password),
+                                   emailConfirmed=user.emailConfirmed,
+                                   icon=user.icon,
+                                   creationDate=datetime.today().strftime('%Y-%m-%d'))
+            return {"User registered:": new_user.username}
+        except:
+            raise HTTPException(
+                status_code=400, detail="Mail address already in use")
+    else:
+        raise HTTPException(
+            status_code=400, detail="Invalid password")
+
+
+@router.get("/users/me", status_code=200)
+async def read_users(current_user: User = Depends(get_current_active_user)):
+    '''
+    API endpoint that serves for testing the token validation. Returns info about
+    the user that logged in if validation went well
+    '''
+    return (current_user)
+
+
+@router.put("/users/refresh", response_model=Token, status_code=200)
+async def refresh_token(email: str = Depends(valid_credentials)):
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": email}, expires_delta=access_token_expires
+    )
+
+    return {"access_token": access_token,
+            "token_type": "bearer"}
 
 
 @router.post("/token", response_model=Token, status_code=200)
@@ -68,29 +109,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     access_token = create_access_token(
         data={"sub": user['email']}, expires_delta=access_token_expires
     )
-    actualize_user_status(user['email'])
-    return {"access_token": access_token, "token_type": "bearer"}
 
-
-@router.post("/users/register", status_code=201)
-async def register(user: User, password: str = Body(..., embed=True)):
-    """
-    endpoint that allows to register users into the database.
-    """
-    if pass_checker(password):
-        try:
-            with db_session:
-                new_user = DB_User(username=user.username,
-                                   email=user.email,
-                                   hashedPassword=get_password_hash(password),
-                                   emailConfirmed=user.emailConfirmed,
-                                   logged=True,
-                                   icon=user.icon,
-                                   creationDate=datetime.today().strftime('%Y-%m-%d'))
-            return {"User registered:": new_user.username}
-        except:
-            raise HTTPException(
-                status_code=400, detail="Mail address already in use")
-    else:
-        raise HTTPException(
-            status_code=400, detail="Invalid password")
+    return {"access_token": access_token,
+            "token_type": "bearer"}

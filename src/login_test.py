@@ -2,7 +2,6 @@
 from fastapi.testclient import TestClient
 
 from main import app
-
 client = TestClient(app)
 """
 Execute test with command: pytest -v 
@@ -18,7 +17,6 @@ def test_load_user1():
                      'email': 'test1@mail.com',
                      'icon': 'string.png',
                      'emailConfirmed': True,
-                     'logged': False
                      },
             "password": "Heladera63"
         }
@@ -34,8 +32,7 @@ def test_load_user2():
             "user": {'username': 'test2',
                      'email': 'test2@mail.com',
                      'icon': 'string.png',
-                     'emailConfirmed': True,
-                     'logged': False
+                     'emailConfirmed': False,
                      },
             "password": "Heladera63"
         }
@@ -52,7 +49,6 @@ def test_load_user3():
                      'email': 'test3@mail.com',
                      'icon': 'string.png',
                      'emailConfirmed': True,
-                     'logged': False
                      },
             "password": "Heladera63"
         }
@@ -73,7 +69,6 @@ def test_login_user_valid():
             "client_secret": ''}
     )
     assert response.status_code == 200
-    print(response.json())
 
 
 def test_login_user_wrong_mail():
@@ -104,6 +99,69 @@ def test_login_user_wrong_pass():
     )
     assert response.status_code == 401
     assert response.json() == {"detail": "Incorrect password"}
+
+
+def test_invalid_token_user():
+    response = client.get(
+        "/users/me",
+        headers={
+            "accept": "application/json",
+            "Authorization": "Bearer a.bad.token"
+        }
+    )
+    assert response.status_code == 401
+
+
+def test_login_and_token_user():
+    response_login = client.post(
+        "/users",
+        data={
+            "grant_type": '',
+            "username": 'test3@mail.com',
+            "password": 'Heladera63',
+            "scope": '',
+            "client_id": '',
+            "client_secret": ''}
+    )
+    assert response_login.status_code == 200
+    rta: dict = response_login.json()
+    token: str = rta['access_token']
+    token_type: str = 'Bearer '
+    head: str = token_type + token
+    response_token = client.get(
+        "/users/me",
+        headers={
+            "accept": "application/json",
+            "Authorization": head
+        }
+    )
+    assert response_token.status_code == 200
+
+
+def test_login_and_refresh_token():
+    response_login = client.post(
+        "/users",
+        data={
+            "grant_type": '',
+            "username": 'test3@mail.com',
+            "password": 'Heladera63',
+            "scope": '',
+            "client_id": '',
+            "client_secret": ''}
+    )
+    assert response_login.status_code == 200
+    rta: dict = response_login.json()
+    token: str = rta['access_token']
+    token_type: str = 'Bearer '
+    head: str = token_type + token
+    response_token = client.get(
+        "/users/me",
+        headers={
+            "accept": "application/json",
+            "Authorization": head
+        }
+    )
+    assert response_token.status_code == 200
 
 
 """

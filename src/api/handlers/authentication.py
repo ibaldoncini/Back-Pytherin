@@ -2,16 +2,14 @@
 from fastapi import Depends, HTTPException, status
 from typing import Optional
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
+from api.models.users.user import Token, TokenData
 
 
 SECRET_KEY = "ca26e6bfe7dccf96bb25c729b3ca09990341ca4a5c849959604f567ccae44425"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
