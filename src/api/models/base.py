@@ -6,19 +6,25 @@ from pydantic.networks import EmailStr
 
 db = Database()
 
+
 class DB_User(db.Entity):
+    '''
+    Entity for the database, the password is stored hashed, and 
+    the db uses the user email as PK
+    '''
     username = Required(str)
-    email = PrimaryKey(EmailStr)
-    hashedPassword = Required(str)
-    emailConfirmed = Required(bool)
-    logged = Required(bool)#sacar
+    email = PrimaryKey(str)
+    hashed_password = Required(str)
+    email_confirmed = Required(bool)
     icon = Optional(str)
-    creationDate = Required(date)
+    creation_date = Required(date)
 
-#db.bind('sqlite','example.sqlite', create_db=True)
-#db.generate_mapping(create_tables=True)
-
+    
 class Validation_Tuple (db.Entity):
-    #How can i map the email to the code?
+    """
+    Database table used in storing the validation codes
+    corresponding to each email registered.
+    """
     email = PrimaryKey(EmailStr)
     code = Required(str)
+

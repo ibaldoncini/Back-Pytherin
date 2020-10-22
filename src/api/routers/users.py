@@ -1,32 +1,50 @@
-from api.models.base import DB_User, Validation_Tuple,db
+# users.py
+from fastapi import APIRouter, Depends, HTTPException, status, Body
+from fastapi.responses import HTMLResponse
+from datetime import datetime, timedelta
+from pony.orm import db_session, select, commit
+from typing import Optional
+from pydantic import Field, BaseModel
+
+
+from api.models.base import db, DB_User, Validation_Tuple
+from api.models.users.user import User, Token, TokenData
+from api.utils.login import *
+from api.handlers.pass_handler import pass_checker
+from api.handlers.authentication import *
 from api.functions.param_check import check_email_not_in_database,check_username_not_in_database
 from api.functions.emailvalidation import Validation
-from api.models.users.user import User
 
-from datetime import datetime
-from fastapi import APIRouter,HTTPException
-from fastapi.responses import HTMLResponse
-from passlib.context import CryptContext
-from pony.orm import db_session,commit,select
-
-SECRET_KEY = "ca26e6bfe7dccf96bb25c729b3ca09990341ca4a5c849959604f567ccae44425"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated = "auto")
 
 router = APIRouter()
 
 
-# TODO i dont think this belongs here
-def verify_password(password, hashed_password):
-  return pwd_context.verify(password, hashed_password)
 
 
-def password_hash(password):
-  return pwd_context.hash(password)
+
+@router.post("/users", response_model=Token, status_code=200)
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    '''
+    LogIn endpoint, first, authenticates the user checking that the
+    email and the password submitted by the user are correct.
+    Then it creates a valid token for the user.
+    '''
+    user = authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user['email']}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token,
+            "token_type": "bearer"}
 
 
-@router.post("/users/register",tags=["Users"])
+@router.post("/users/register",tags=["Users"],status_code=201)
 async def register(user : User):
   """
   User register endpoint 
@@ -59,7 +77,6 @@ async def register(user : User):
     elif not check_email_not_in_database(user):
       msg += "Email already registered"
       raise HTTPException(status_code=409,detail="Email aready registered")
-
     return {msg}
 
 
@@ -89,7 +106,6 @@ async def validate_user (email : str,code : str):
         </body>
     </html>
     """
-    #todo why is this not returning?
     return HTMLResponse(html)
   except:
     raise HTTPException(status_code=404,detail="Email not found")
@@ -109,7 +125,27 @@ async def dump():
   print(res.__str__())
   return {"Users: " : res.__str__()}
 
+@router.put("/users/refresh", response_model=Token, status_code=201)
+async def refresh_token(email: str = Depends(valid_credentials)):
+    """
+    Endpoint that creates a new web token.
+    As the funciton "updates" creating a new token, it has the PUT method. 
+    Need to be logged in to use.
+    """
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token,
+            "token_type": "bearer"}
 
+  
 @router.get("/users/validation_tuple")
 @db_session
 async def dump_validation ():
@@ -122,4 +158,19 @@ async def dump_validation ():
 
 
 
-    
+@router.post("/token", response_model=Token, status_code=200)
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user['email']}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token,
+            "token_type": "bearer"}
+
