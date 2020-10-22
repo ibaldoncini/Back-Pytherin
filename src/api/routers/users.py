@@ -10,16 +10,83 @@ from pydantic import Field, BaseModel
 from api.models.base import db, DB_User, Validation_Tuple
 from api.models.users.user import User, Token, TokenData
 from api.utils.login import *
-from api.handlers.pass_handler import pass_checker
+from api.handlers.pass_handler import *
 from api.handlers.authentication import *
-from api.functions.param_check import check_email_not_in_database,check_username_not_in_database
-from api.functions.emailvalidation import Validation
+from api.handlers.param_check import *
+from api.handlers.emailvalidation import *
 
 
 router = APIRouter()
 
 
+@router.post("/users/register", tags=["Users"], status_code=201)
+async def register(user: User):
+    """
+    User register endpoint 
+    Params: User data->
+      * username : str
+      * email : EmailStr
+      * password : str
+    """
+    if (check_username_not_in_database(user) and
+            check_email_not_in_database(user)):
+        with db_session:
+            DB_User(username=user.username,
+                    email=user.email,
+                    hashed_password=get_password_hash(user.password),
+                    email_confirmed=False,
+                    icon=user.icon,
+                    creation_date=datetime.today().strftime('%Y-%m-%d'))
 
+        validator = Validation()
+        validator.send_mail(user.email)
+
+        return {"message": user.username + ", a verification email has" +
+                " been sent to " + user.email}
+    else:
+        msg = ""
+        if not check_username_not_in_database(user):
+            msg += "Username already registered "
+            raise HTTPException(
+                status_code=409, detail="Username already registered ")
+        elif not check_email_not_in_database(user):
+            msg += "Email already registered"
+            raise HTTPException(
+                status_code=409, detail="Email aready registered")
+        return {msg}
+
+
+# This is a get bc we want the user to be able to use this endpoint from sent link
+@router.get("/validate/", tags=["Users"], status_code=200)
+async def validate_user(email: str, code: str):
+    try:
+        with db_session:
+            user = DB_User.get(email=email)
+            data = db.get(
+                "select email,code from Validation_Tuple where email=$email")
+
+            if data[1] != code:
+                raise HTTPException(
+                    status_code=409, detail="Invalid validation code")
+
+            user = DB_User.get(email=email)
+            user.set(email_confirmed=True)
+            commit()
+
+        html = """
+    <!DOCTYPE html>
+    <html>
+        <head>
+            <title>Secret voldemort</title>
+        </head>
+        <body>
+            <h1>Verified!</h1>
+        </body>
+    </html>
+    """
+        return HTMLResponse(html)
+    except:
+        raise HTTPException(status_code=404, detail="Email not found")
 
 
 @router.post("/users", response_model=Token, status_code=200)
@@ -44,87 +111,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             "token_type": "bearer"}
 
 
-@router.post("/users/register",tags=["Users"],status_code=201)
-async def register(user : User):
-  """
-  User register endpoint 
-  Params: User data->
-    * username : str
-    * email : EmailStr
-    * password : str
-  """
-  if (check_username_not_in_database(user) and 
-      check_email_not_in_database(user)): 
-    with db_session:
-      DB_User(username = user.username,
-              email = user.email,
-              hashedPassword = password_hash(user.password),
-              emailConfirmed = False,
-              logged = True,
-              icon = user.icon,
-              creationDate = datetime.today().strftime('%Y-%m-%d'))
-
-    validator = Validation()
-    validator.send_mail(user.email)
-
-    return {"User Registered:": user.username + " A verification email has" +
-            " been sent to " + user.email}
-  else:
-    msg = ""
-    if not check_username_not_in_database(user):
-      msg += "Username already registered "
-      raise HTTPException(status_code=409,detail="Username already registered ")
-    elif not check_email_not_in_database(user):
-      msg += "Email already registered"
-      raise HTTPException(status_code=409,detail="Email aready registered")
-    return {msg}
-
-
-# This is a get bc we want the user to be able to use this endpoint from sent link
-@router.get("/validate/",tags=["Users"],status_code=200)
-async def validate_user (email : str,code : str):
-  try:
-    with db_session:
-      user = DB_User.get(email=email)
-      data = db.get("select email,code from Validation_Tuple where email=$email")
-
-      if data[1] != code:
-        raise HTTPException(status_code=409,detail="Invalid validation code")
-
-      user = DB_User.get(email=email)
-      user.set(emailConfirmed=True)
-      commit()
-
-    html = """
-    <!DOCTYPE html>
-    <html>
-        <head>
-            <title>Secret voldemort</title>
-        </head>
-        <body>
-            <h1>Verified!</h1>
-        </body>
-    </html>
-    """
-    return HTMLResponse(html)
-  except:
-    raise HTTPException(status_code=404,detail="Email not found")
-
-
-
-@router.get("/users",tags=["Users"])
-@db_session
-async def dump():
-  """
-  Dumps id, username and email of all users in database
-  """
-  res = []
-  for row in db.select("* from DB_User"):
-    res.append((row.email,row.emailConfirmed))
-  
-  print(res.__str__())
-  return {"Users: " : res.__str__()}
-
 @router.put("/users/refresh", response_model=Token, status_code=201)
 async def refresh_token(email: str = Depends(valid_credentials)):
     """
@@ -145,18 +131,6 @@ async def refresh_token(email: str = Depends(valid_credentials)):
     return {"access_token": access_token,
             "token_type": "bearer"}
 
-  
-@router.get("/users/validation_tuple")
-@db_session
-async def dump_validation ():
-  res = []
-  for row in db.select("email,code from Validation_Tuple")[:]:
-    res.append(row)
-  
-  print(res.__str__())
-  return {"Users: " : res.__str__()}
-
-
 
 @router.post("/token", response_model=Token, status_code=200)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -174,3 +148,26 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return {"access_token": access_token,
             "token_type": "bearer"}
 
+"""
+@router.get("/users", tags=["Users"])
+@db_session
+async def dump():
+    res = []
+    for row in db.select("* from DB_User"):
+        res.append((row.email, row.email_confirmed))
+
+    print(res.__str__())
+    return {"Users: ": res.__str__()}
+
+
+
+@router.get("/users/validation_tuple")
+@db_session
+async def dump_validation():
+    res = []
+    for row in db.select("email,code from Validation_Tuple")[:]:
+        res.append(row)
+
+    print(res.__str__())
+    return {"Users: ": res.__str__()}
+"""

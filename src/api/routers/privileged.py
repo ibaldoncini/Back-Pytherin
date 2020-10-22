@@ -7,7 +7,6 @@ from pydantic import Field, BaseModel
 from api.models.base import db, DB_User
 from api.models.users.user import User, Token, TokenData
 from api.utils.login import *
-from api.handlers.pass_handler import pass_checker
 from api.handlers.authentication import *
 
 
