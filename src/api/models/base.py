@@ -1,4 +1,5 @@
 # base.py
+from typing import Tuple
 from pony.orm import *
 from datetime import date
 from pydantic.networks import EmailStr
@@ -6,12 +7,11 @@ from pydantic.networks import EmailStr
 db = Database()
 
 class DB_User(db.Entity):
-    id = PrimaryKey(int,auto=True)
     username = Required(str)
-    email = Required(EmailStr)
+    email = PrimaryKey(EmailStr)
     hashedPassword = Required(str)
     emailConfirmed = Required(bool)
-    logged = Required(bool)
+    logged = Required(bool)#sacar
     icon = Optional(str)
     creationDate = Required(date)
 
@@ -19,5 +19,6 @@ class DB_User(db.Entity):
 #db.generate_mapping(create_tables=True)
 
 class Validation_Tuple (db.Entity):
-    username = PrimaryKey(str)
+    #How can i map the email to the code?
+    email = PrimaryKey(EmailStr)
     code = Required(str)

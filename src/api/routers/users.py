@@ -5,8 +5,9 @@ from api.models.users.user import User
 
 from datetime import datetime
 from fastapi import APIRouter,HTTPException
+from fastapi.responses import HTMLResponse
 from passlib.context import CryptContext
-from pony.orm import db_session
+from pony.orm import db_session,commit,select
 
 SECRET_KEY = "ca26e6bfe7dccf96bb25c729b3ca09990341ca4a5c849959604f567ccae44425"
 ALGORITHM = "HS256"
@@ -37,18 +38,18 @@ async def register(user : User):
   if (check_username_not_in_database(user) and 
       check_email_not_in_database(user)): 
     with db_session:
-      new_user = DB_User(username = user.username,
-                        email = user.email,
-                        hashedPassword = password_hash(user.password),
-                        emailConfirmed = False,
-                        logged = True,
-                        icon = user.icon,
-                        creationDate = datetime.today().strftime('%Y-%m-%d'))
+      DB_User(username = user.username,
+              email = user.email,
+              hashedPassword = password_hash(user.password),
+              emailConfirmed = False,
+              logged = True,
+              icon = user.icon,
+              creationDate = datetime.today().strftime('%Y-%m-%d'))
 
-    validator = Validation(user.username)
+    validator = Validation()
     validator.send_mail(user.email)
 
-    return {"User Registered:": str(new_user.id) + " A verification email has" +
+    return {"User Registered:": user.username + " A verification email has" +
             " been sent to " + user.email}
   else:
     msg = ""
@@ -62,15 +63,37 @@ async def register(user : User):
     return {msg}
 
 
-@router.put("/validate/",tags=["Users"])
-@db_session
-async def validate_user (username : str,code : str):
-  for data in db.select(t for t in Validation_Tuple if t.username == username):
-    if code == data.code:
-      for user in db.select(u for u in DB_User if u.username == username):
-        user.emailConfirmed = True
-        return {"User confirmed!"}
-  raise HTTPException(status_code=500,detail="No user " + username +"found")
+# This is a get bc we want the user to be able to use this endpoint from sent link
+@router.get("/validate/",tags=["Users"],status_code=200)
+async def validate_user (email : str,code : str):
+  try:
+    with db_session:
+      user = DB_User.get(email=email)
+      data = db.get("select email,code from Validation_Tuple where email=$email")
+
+      if data[1] != code:
+        raise HTTPException(status_code=409,detail="Invalid validation code")
+
+      user = DB_User.get(email=email)
+      user.set(emailConfirmed=True)
+      commit()
+
+    html = """
+    <!DOCTYPE html>
+    <html>
+        <head>
+            <title>Secret voldemort</title>
+        </head>
+        <body>
+            <h1>Verified!</h1>
+        </body>
+    </html>
+    """
+    #todo why is this not returning?
+    return HTMLResponse(html)
+  except:
+    raise HTTPException(status_code=404,detail="Email not found")
+
 
 
 @router.get("/users",tags=["Users"])
@@ -81,18 +104,18 @@ async def dump():
   """
   res = []
   for row in db.select("* from DB_User"):
-    res.append((row.username,row.id,row.email)) 
+    res.append((row.email,row.emailConfirmed))
   
   print(res.__str__())
   return {"Users: " : res.__str__()}
 
 
-@router.get("/users/dumpvalidcodes")
+@router.get("/users/validation_tuple")
 @db_session
 async def dump_validation ():
   res = []
-  for row in db.select("* from Validation_Tuple"):
-    res.append((row.username,row.code)) 
+  for row in db.select("email,code from Validation_Tuple")[:]:
+    res.append(row)
   
   print(res.__str__())
   return {"Users: " : res.__str__()}
