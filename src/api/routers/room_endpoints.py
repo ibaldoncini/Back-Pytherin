@@ -4,8 +4,8 @@ from pony.orm import db_session, select
 
 from api.models.base import db
 from api.models.room_models import RoomCreationRequest
-from Room import Room
-from RoomHub import RoomHub
+from classes.room import Room
+from classes.room_hub import RoomHub
 
 
 router = APIRouter()

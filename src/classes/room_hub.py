@@ -1,5 +1,5 @@
 from typing import List
-from Room import Room
+from classes.room import Room
 
 
 class RoomHub:
