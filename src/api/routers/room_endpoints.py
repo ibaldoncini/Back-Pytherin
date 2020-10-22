@@ -14,7 +14,7 @@ hub = RoomHub()
 
 
 @router.post("/room/new", status_code=status.HTTP_201_CREATED)
-async def create_room(room_info: RoomCreationRequest, response: Response):
+async def create_room(room_info: RoomCreationRequest):
     """
     Endpoint for creating a new room.
 
@@ -38,16 +38,14 @@ async def create_room(room_info: RoomCreationRequest, response: Response):
 
     names = hub.all_rooms()
 
-    message: str
+    # if user not logged in raise....
     if not email_confirmed:
-        message = "E-mail not confirmed"
-        response.status_code = status.HTTP_401_UNAUTHORIZED
+        raise HTTPException(
+            status_code=401, detail="E-mail not confirmed")
     elif room_name in names:
-        message = "Room name already in use"
-        response.status_code = status.HTTP_409_CONFLICT
+        raise HTTPException(
+            status_code=409, detail="Room name already in use")
     else:
         new_room = Room(room_name, max_players, owner)
         hub.add_room(new_room)
-        message = "Room created succesfully"
-
-    return {"message": message}
+        return {"message": "Room created succesfully"}
