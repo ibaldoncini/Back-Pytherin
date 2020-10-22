@@ -41,12 +41,14 @@ def verify_token(token: str = Depends(oauth2_scheme)):
 
 app = FastAPI()
 
+
 db.bind('sqlite', 'example.sqlite', create_db=True)
 db.generate_mapping(create_tables=True)
 
-app.include_router(users.router)
 
+app.include_router(users.router)
 # en el siguiente router, se encuentran algunas funciones que sirven para
 # testear el correcto funcionamiento de los tokens, pues los endpoints
 # que estan tienen como dependencia la funcion verify_token definida mas arriba
 app.include_router(privado.router, dependencies=[Depends(verify_token)])
+
