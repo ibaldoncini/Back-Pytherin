@@ -55,7 +55,7 @@ class Room:
         disconnected_user = self.connections.pop(user, None)
         if (self.connections == {}):
             # WIP
-            # server.remove_room(self) -> remove myself from list of rooms
+            # server.remove_room(self) -> remove myself from hub
             # del self -> destroy myself
             pass
         elif (self.owner == user):

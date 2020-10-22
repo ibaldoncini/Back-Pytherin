@@ -97,3 +97,4 @@ def test_create_room_email_not_confirmed():
     assert response.json() == {"detail": "E-mail not confirmed"}
 
 # def test_create_room_not_logged():
+# def test_create_room_name length
