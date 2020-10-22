@@ -1,6 +1,5 @@
 
-from fastapi import Depends, FastAPI, Header, HTTPException
-from pony.orm import db_session,select
+from fastapi import FastAPI
 
 from api.routers import users
 
@@ -17,8 +16,3 @@ app.include_router(users.router)
 @app.get("/")
 async def greeting():
   return {"message": "Hello World"}
-
-
-
-
-
