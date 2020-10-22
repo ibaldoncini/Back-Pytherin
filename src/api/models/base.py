@@ -1,5 +1,4 @@
 # base.py
-from typing import Tuple
 from pony.orm import *
 from datetime import date
 from pydantic.networks import EmailStr
@@ -19,7 +18,7 @@ class DB_User(db.Entity):
     icon = Optional(str)
     creation_date = Required(date)
 
-    
+
 class Validation_Tuple (db.Entity):
     """
     Database table used in storing the validation codes
@@ -27,4 +26,3 @@ class Validation_Tuple (db.Entity):
     """
     email = PrimaryKey(EmailStr)
     code = Required(str)
-

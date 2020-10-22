@@ -1,11 +1,11 @@
-from fastapi import FastAPI, APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, Query, status, Response
+from fastapi import FastAPI, APIRouter, HTTPException, status
+from fastapi.responses import HTMLResponse
 from pony.orm import db_session, select
-from typing import Optional, List
+
 from api.models.base import db
 from api.models.room_models import RoomCreationRequest
 from Room import Room
 from RoomHub import RoomHub
-from fastapi.responses import HTMLResponse
 
 
 router = APIRouter()
@@ -24,6 +24,7 @@ async def create_room(room_info: RoomCreationRequest):
             409 when the room name is already in use.
             500 when there's an internal error in the database.
     """
+
     owner = room_info.email
     room_name = room_info.name
     max_players = room_info.max_players
@@ -31,7 +32,7 @@ async def create_room(room_info: RoomCreationRequest):
     with db_session:
         try:
             email_confirmed = db.get(
-                "select emailConfirmed from DB_User where email = $owner")
+                "select email_confirmed from DB_User where email = $owner")
         except BaseException:
             raise HTTPException(
                 status_code=500, detail="Something went wrong")

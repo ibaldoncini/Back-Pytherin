@@ -21,7 +21,7 @@ db.generate_mapping(create_tables=True)
 
 
 app.include_router(users.router)
-app.include_router(room_endpoints.router)
+app.include_router(room_endpoints.router, dependencies=[Depends(verify_token)])
 # en el siguiente router, se encuentran algunas funciones que sirven para
 # testear el correcto funcionamiento de los tokens, pues los endpoints
 # que estan tienen como dependencia la funcion verify_token definida mas arriba
