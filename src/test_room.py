@@ -1,12 +1,3 @@
-# TODO - Room creation tests!
-
-# When all conditions are met, is the room succesfully created?
-# What happens if thers no email verificated?
-# What about when the name is already in use?
-# Or when the max player number is outside [5,10]?
-# What if no user exists with that email?
-# Or if a required parameter is missing?
-
 
 """
 Always erase database before running this test
@@ -24,77 +15,115 @@ client.post(
     json={
         "username": "jhonny_test",
         "email": "test@test.com",
-        "password": "testtest",
-        "icon": "stringstring",
-        "emailConfirmed": "true",
-        "logged": "true"
+        "password": "Heladera64",
+        "icon": "string"
     }
 )
 
+response_login = client.post(
+    "/users",
+    data={
+        "grant_type": '',
+        "username": 'test@test.com',
+        "password": 'Heladera64',
+        "scope": '',
+        "client_id": '',
+        "client_secret": ''}
+)
+assert response_login.status_code == 200
+rta: dict = response_login.json()
+token: str = rta['access_token']
+token_type: str = 'Bearer '
+head: str = token_type + token
 
-def test_create_room():
+
+# test no login
+def test_no_login():
     response = client.post(
         "/room/new",
-        json={"name": "foobar", "max_players": "5",
-              "email": "test@test.com"}
+        json={"name": "foobar", "max_players": "5"}
     )
-    assert response.status_code == 201
-    assert response.json() == {"message": "Room created succesfully"}
+    assert response.status_code == 401
+    assert response.json() == {
+        "detail": "Not authenticated"}
 
 
-def test_create_room_in_use_name():
+# test login no mail
+def test_unconfirmed_mail():
     response = client.post(
         "/room/new",
-        json={"name": "foobar", "max_players": "6",
-              "email": "test@test.com"}
+        headers={"accept": "application/json",
+                 "Authorization": head
+                 },
+        json={"name": "foobar", "max_players": "5"}
     )
-    assert response.status_code == 409
-    assert response.json() == {"detail": "Room name already in use"}
+    assert response.status_code == 403
+    assert response.json() == {
+        "detail": "E-mail not confirmed"}
 
 
-def test_create_room_4_players():
-    response = client.post(
-        "/room/new",
-        json={"name": "foobar", "max_players": "4",
-              "email": "test@test.com"}
-    )
-    assert response.status_code == 422
-
-
-def test_create_room_11_players():
-    response = client.post(
-        "/room/new",
-        json={"name": "foobar", "max_players": "11",
-              "email": "test@test.com"}
-    )
-    assert response.status_code == 422
-
-
-def test_create_room_missing_parameter():
-    response = client.post(
-        "/room/new",
-        json={"max_players": "11",
-              "email": "test@test.com"}
-    )
-    assert response.status_code == 422
-
-
-def test_create_room_email_not_confirmed():
+# test login and mail bad arguments
+def test_bad_json():
     with db_session:
         try:
             user = DB_User.get(email="test@test.com")
-            user.set(emailConfirmed=False)
+            user.set(email_confirmed=True)
             commit()
         except:
             return None
 
+    response1 = client.post(
+        "/room/new",
+        headers={"accept": "application/json",
+                 "Authorization": head
+                 },
+        json={"name": "foobar"}
+    )
+
+    response2 = client.post(
+        "/room/new",
+        headers={"accept": "application/json",
+                 "Authorization": head
+                 },
+        json={"name": "foobar", "max_players": "4"}
+    )
+
+    response3 = client.post(
+        "/room/new",
+        headers={"accept": "application/json",
+                 "Authorization": head
+                 },
+        json={"name": "foo", "max_players": "5"}
+    )
+
+    assert response1.status_code == 422
+    assert response2.status_code == 422
+    assert response3.status_code == 422
+
+
+# test login and mail good arguments (happy path)
+def test_happy_path():
     response = client.post(
         "/room/new",
-        json={"name": "foobarfoobar", "max_players": "5",
-              "email": "test@test.com"}
+        headers={"accept": "application/json",
+                 "Authorization": head
+                 },
+        json={"name": "foobar", "max_players": "5"}
     )
-    assert response.status_code == 401
-    assert response.json() == {"detail": "E-mail not confirmed"}
+    assert response.status_code == 201
+    assert response.json() == {
+        "message": "Room created successfully"}
 
-# def test_create_room_not_logged():
-# def test_create_room_name length
+
+# test login and mail in use nam
+def test_used_name():
+    response = client.post(
+        "/room/new",
+        headers={"accept": "application/json",
+                 "Authorization": head
+                 },
+        json={"name": "foobar", "max_players": "6"}
+    )
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": "Room name already in use"}

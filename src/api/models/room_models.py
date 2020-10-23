@@ -9,8 +9,7 @@ class RoomCreationRequest(BaseModel):
     name: str = Field(..., min_length=6, max_length=20,
                       description="The room's name")
     max_players: int = Field(
-        10, ge=5, le=10, description="Max allowed players in the room")
-    email: str = Field(..., description="The room owner's e-mail")
+        ..., ge=5, le=10, description="Max allowed players in the room")
 
 
 class JoinRoomRequest(BaseModel):
