@@ -22,37 +22,40 @@ router = APIRouter()
 @router.post("/users/register", tags=["Users"], status_code=201)
 async def register(user: User):
     """
-    User register endpoint 
+    User register endpoint
     Params: User data->
       * username : str
       * email : EmailStr
       * password : str
     """
-    if (check_username_not_in_database(user) and
-            check_email_not_in_database(user)):
+    if check_username_not_in_database(user) and check_email_not_in_database(user):
         with db_session:
-            DB_User(username=user.username,
-                    email=user.email,
-                    hashed_password=get_password_hash(user.password),
-                    email_confirmed=False,
-                    icon=user.icon,
-                    creation_date=datetime.today().strftime('%Y-%m-%d'))
+            DB_User(
+                username=user.username,
+                email=user.email,
+                hashed_password=get_password_hash(user.password),
+                email_confirmed=False,
+                icon=user.icon,
+                creation_date=datetime.today().strftime("%Y-%m-%d"),
+            )
 
         validator = Validation()
         validator.send_mail(user.email)
 
-        return {"message": user.username + ", a verification email has" +
-                " been sent to " + user.email}
+        return {
+            "message": user.username
+            + ", a verification email has"
+            + " been sent to "
+            + user.email
+        }
     else:
         msg = ""
         if not check_username_not_in_database(user):
             msg += "Username already registered "
-            raise HTTPException(
-                status_code=409, detail="Username already registered ")
+            raise HTTPException(status_code=409, detail="Username already registered ")
         elif not check_email_not_in_database(user):
             msg += "Email already registered"
-            raise HTTPException(
-                status_code=409, detail="Email aready registered")
+            raise HTTPException(status_code=409, detail="Email aready registered")
         return {msg}
 
 
@@ -62,12 +65,10 @@ async def validate_user(email: str, code: str):
     try:
         with db_session:
             user = DB_User.get(email=email)
-            data = db.get(
-                "select email,code from Validation_Tuple where email=$email")
+            data = db.get("select email,code from Validation_Tuple where email=$email")
 
             if data[1] != code:
-                raise HTTPException(
-                    status_code=409, detail="Invalid validation code")
+                raise HTTPException(status_code=409, detail="Invalid validation code")
 
             user = DB_User.get(email=email)
             user.set(email_confirmed=True)
@@ -91,11 +92,11 @@ async def validate_user(email: str, code: str):
 
 @router.post("/users", response_model=Token, status_code=200)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    '''
+    """
     LogIn endpoint, first, authenticates the user checking that the
     email and the password submitted by the user are correct.
     Then it creates a valid token for the user.
-    '''
+    """
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -105,17 +106,16 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user['email']}, expires_delta=access_token_expires
+        data={"sub": user["email"]}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token,
-            "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.put("/users/refresh", response_model=Token, status_code=201)
 async def refresh_token(email: str = Depends(valid_credentials)):
     """
     Endpoint that creates a new web token.
-    As the funciton "updates" creating a new token, it has the PUT method. 
+    As the funciton "updates" creating a new token, it has the PUT method.
     Need to be logged in to use.
     """
     if not email:
@@ -128,8 +128,7 @@ async def refresh_token(email: str = Depends(valid_credentials)):
     access_token = create_access_token(
         data={"sub": email}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token,
-            "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.post("/token", response_model=Token, status_code=200)
@@ -143,10 +142,11 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user['email']}, expires_delta=access_token_expires
+        data={"email": user["email"], "username": user["username"]},
+        expires_delta=access_token_expires,
     )
-    return {"access_token": access_token,
-            "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer"}
+
 
 """
 @router.get("/users", tags=["Users"])
