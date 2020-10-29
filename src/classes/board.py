@@ -1,4 +1,4 @@
-from deck import Card
+from classes.deck import Card
 
 
 class Board:
@@ -7,10 +7,10 @@ class Board:
         self.fo_proclaims: int = 0
         self.chaos_counter: int = 0
 
-    def get_de_proclaims(self):
+    def get_de_procs(self):
         return self.de_proclaims
 
-    def get_fo_proclaims(self):
+    def get_fo_procs(self):
         return self.fo_proclaims
 
     def get_chaos_counter(self):
@@ -23,7 +23,7 @@ class Board:
         self.chaos_counter = 0
 
     def proclaim(self, card: Card):
-        if (card == Card.FO):
+        if card == Card.FO:
             self.fo_proclaims += 1
         else:
             self.de_proclaims += 1

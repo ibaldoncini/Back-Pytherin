@@ -1,5 +1,5 @@
-from role_enum import Role
-from loyalty_enum import Loyalty
+from classes.role_enum import Role
+from classes.loyalty_enum import Loyalty
 
 
 class Player:
@@ -28,7 +28,7 @@ class Player:
         return self.is_alive
 
     def is_voldemort(self):
-        return (self.role == Role.VOLDEMORT)
+        return self.role == Role.VOLDEMORT
 
     def set_role(self, role: Role):
         self.role = role
