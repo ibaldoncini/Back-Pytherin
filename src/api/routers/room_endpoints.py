@@ -10,6 +10,7 @@ from classes.room_hub import RoomHub
 
 from classes.game import Game
 from classes.player import Player
+from classes.role_enum import *
 
 router = APIRouter()
 
@@ -103,7 +104,21 @@ async def get_game_state(
         return {"users": room.users, "owner": room.owner}
     elif room.status == RoomStatus.IN_GAME:
         game = room.get_game()
+
+        my_role = game.get_player_role(email)
+        if (my_role == Role.DEATH_EATER or my_role == Role.VOLDEMORT):
+            de_list = game.get_de_list()
+            voldemort = game.get_voldemort()
+            # In next sprints, we need to check who is voldemort
+            # and then show them the de_list
+        else:
+            de_list = []
+            voldemort = ""
+
         json_r = {
+            "my_role": my_role,
+            "death_eaters": de_list,
+            "voldemort": voldemort,
             "minister": game.get_minister_user(),
             "director": game.get_director_user(),
             "last_minister": game.get_last_minister_user(),

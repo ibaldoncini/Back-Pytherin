@@ -89,6 +89,24 @@ class Game:
             unames.append(player.get_user())
         return unames
 
+    def __get_player_by_email(self, email: str):
+        filtered = filter(lambda p: p.get_user() == email, self.players)
+        return (list(filtered)[0])
+
+    def get_player_role(self, email: str):
+        return self.__get_player_by_email(email).get_role()
+
+    def get_de_list(self):
+        filtered = filter(lambda p:  p.get_loyalty() ==
+                          Loyalty.DEATH_EATER, self.players)
+
+        return list(map(lambda p: p.get_user(), filtered))
+
+    def get_voldemort(self):
+        filtered = filter(lambda p:  p.get_role() ==
+                          Role.VOLDEMORT, self.players)
+        return (list(filtered)[0].get_user())
+
     def new_minister(self):
         """
         Method that changes the current minister, it will be called at the
@@ -100,16 +118,3 @@ class Game:
         last_minister_index = self.players.index(self.last_minister)
         new_minister_index = (last_minister_index + 1) % self.n_of_players
         self.minister = self.players[new_minister_index]
-
-    def dump_game_info(self):
-        player_dump: str = "\nUser | Role   | is voldemort | is alive"
-        for p in self.players:
-            player_dump += f"\n{p.get_user()} | {p.get_role()} | {p.get_is_voldemort()} | {p.get_is_alive()} \n"
-
-        dump: str = f"""
-        Users: {self.users}
-        N° of players: {self.n_of_players}
-        Players: {player_dump}
-        Deck: {self.deck.cards}
-                """
-        print(dump)
