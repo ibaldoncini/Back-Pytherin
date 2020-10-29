@@ -52,10 +52,12 @@ async def register(user: User):
         msg = ""
         if not check_username_not_in_database(user):
             msg += "Username already registered "
-            raise HTTPException(status_code=409, detail="Username already registered ")
+            raise HTTPException(
+                status_code=409, detail="Username already registered ")
         elif not check_email_not_in_database(user):
             msg += "Email already registered"
-            raise HTTPException(status_code=409, detail="Email aready registered")
+            raise HTTPException(
+                status_code=409, detail="Email aready registered")
         return {msg}
 
 
@@ -65,10 +67,12 @@ async def validate_user(email: str, code: str):
     try:
         with db_session:
             user = DB_User.get(email=email)
-            data = db.get("select email,code from Validation_Tuple where email=$email")
+            data = db.get(
+                "select email,code from Validation_Tuple where email=$email")
 
             if data[1] != code:
-                raise HTTPException(status_code=409, detail="Invalid validation code")
+                raise HTTPException(
+                    status_code=409, detail="Invalid validation code")
 
             user = DB_User.get(email=email)
             user.set(email_confirmed=True)
@@ -127,7 +131,7 @@ async def refresh_token(email: str = Depends(valid_credentials)):
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"email": user["email"], "username": user["username"]},
+        data={"email": email},
         expires_delta=access_token_expires,
     )
     return {"access_token": access_token, "token_type": "bearer"}
