@@ -2,14 +2,16 @@ from typing import List, Dict
 from enum import Enum, unique
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
+from classes.game import Game
+
 
 @unique
 class RoomStatus(Enum):
     """Enum for Room class status"""
 
-    PREGAME = 'Pregame'
-    IN_GAME = 'In game'
-    FINISHED = 'Finished'
+    PREGAME = "Pregame"
+    IN_GAME = "In game"
+    FINISHED = "Finished"
 
 
 class Room:
@@ -20,14 +22,16 @@ class Room:
     Currently identifying users by their e-mail(str). Maybe not the most optimal approach.
     Using type decorators whenever possible.
     """
+
     # game: Game -> when game starts
 
     def __init__(self, name, max_players, owner):
         self.name: str = name
         self.max_players: int = max_players
         self.owner: str = owner
-        self.connections: List[str] = []
+        self.users: List[str] = []
         self.status: RoomStatus = RoomStatus.PREGAME
+        self.game: Game = None
 
     async def user_join(self, user: str):
         """
@@ -36,29 +40,28 @@ class Room:
 
         Maybe it should return something (confirmation? error?)
         """
-        if (self.is_open()):
-            self.connections.append(user)
+        if self.is_open():
+            self.users.append(user)
 
     def is_open(self):
         """
         Returns true when a user can join, false otherwise
         """
-        return (len(self.connections) <
-                self.max_players and self.status == RoomStatus.PREGAME)
+        return len(self.users) < self.max_players and self.status == RoomStatus.PREGAME
 
     def user_leave(self, user: str):
         """
         Removes a user from the current users list.
         Then passes ownership or removes the room from the hub if necessary
         """
-        self.connections.remove(user)
-        if (self.connections == []):
+        self.users.remove(user)
+        if self.users == []:
             # WIP
             # server.remove_room(self) -> remove myself from hub
             # del self -> destroy myself
             pass
-        elif (self.owner == user):
-            self.owner = self.connections[0]
+        elif self.owner == user:
+            self.owner = self.users[0]
 
     def get_name(self):
         """ Room name getter"""
@@ -66,12 +69,16 @@ class Room:
 
     def get_user_count(self):
         """User count getter"""
-        return len(self.connections)
+        return len(self.users)
 
     def get_user_list(self):
         """User list getter"""
-        return self.connections
+        return self.users
 
     def start_game(self):
+        self.game = Game(self.users)
         self.status = RoomStatus.IN_GAME
         # Obviously is not finished.
+
+    def get_game(self):
+        return self.game

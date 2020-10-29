@@ -4,9 +4,12 @@ from fastapi.responses import HTMLResponse
 from api.models.room_models import RoomCreationRequest
 from api.handlers.authentication import *
 from api.utils.room_utils import check_email_status
-from classes.room import Room
+
+from classes.room import Room, RoomStatus
 from classes.room_hub import RoomHub
 
+from classes.game import Game
+from classes.player import Player
 
 router = APIRouter()
 
@@ -48,20 +51,19 @@ async def create_room(
 
 @router.get("/room/join/{room_name}", status_code=status.HTTP_200_OK)
 async def join_room(
-    room_name: str = Path(
-        ...,
-        min_length=6,
-        max_length=20,
-        description="The name of the room you want to join",
-    ),
-    email: str = Depends(valid_credentials),
-):
+        room_name: str = Path(
+            ...,
+            min_length=6,
+            max_length=20,
+            description="The name of the room you want to join",
+        ),
+        email: str = Depends(valid_credentials)):
     """
     Endpoint to join a room, it takes the room name as a parameter in the URL,
     and the access_token in the request headers.
 
     Possible respones:\n
-            20 when succesfully created.
+            200 when succesfully joined.
             401 when not logged in.
             403 when email not confirmed.
             404 when the room doesn't exist.
@@ -75,9 +77,66 @@ async def join_room(
     elif not room:
         raise HTTPException(status_code=404, detail="Room not found")
     elif email in room.get_user_list():
-        raise HTTPException(status_code=409, detail="You are already in this room")
+        raise HTTPException(
+            status_code=409, detail="You are already in this room")
     elif not room.is_open():
         raise HTTPException(status_code=403, detail="Room is full or in-game")
     else:
         await room.user_join(email)
         return {"message": f"Joined {room_name}"}
+
+
+@router.get("/{room_name}/game_state", status_code=status.HTTP_200_OK)
+async def get_game_state(
+        room_name: str = Path(
+            ...,
+            min_length=6,
+            max_length=20,
+            description="The room wich you want to get the game state of",
+        ),
+        email: str = Depends(valid_credentials)):
+
+    room = hub.get_room_by_name(room_name)
+    if not email in room.get_user_list():
+        raise HTTPException(status_code=403, detail="You're not in this room")
+    elif room.status == RoomStatus.PREGAME:
+        return {"users": room.users, "owner": room.owner}
+    elif room.status == RoomStatus.IN_GAME:
+        game = room.get_game()
+        json_r = {
+            "minister": game.get_minister_user(),
+            "director": game.get_director_user(),
+            "last_minister": game.get_last_minister_user(),
+            "last_director": game.get_last_director_user(),
+            "de_procs": game.get_de_procs(),
+            "fo_procs": game.get_fo_procs(),
+            "phase": game.phase,
+            "player_list": game.get_current_players(),
+        }
+        return json_r
+    elif room.status == RoomStatus.FINISHED:
+        # show results TO DO
+        return {"message": "Game has finished"}
+
+
+@router.put("/{room_name}/start", tags=["Game"], status_code=status.HTTP_201_CREATED)
+async def start_game(
+        room_name: str = Path(
+            ...,
+            min_length=6,
+            max_length=20,
+            description="The room wich you want to get the game state of",
+        ),
+        email: str = Depends(valid_credentials)):
+
+    room = hub.get_room_by_name(room_name)
+
+    if (room.owner != email):
+        raise HTTPException(
+            status_code=403, detail="You're not the owner of the room")
+    elif (len(room.get_user_list()) < 5):
+        raise HTTPException(
+            status_code=409, detail="Not enough players")
+    else:
+        room.start_game()
+        return {"message": "Succesfully started"}
