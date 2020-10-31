@@ -1,14 +1,15 @@
 from classes.game_status_enum import GamePhase
 from fastapi import APIRouter, HTTPException, status, Depends, Path
-
-from api.models.room_models import RoomCreationRequest, VoteRequest
+from api.models.room_models import RoomCreationRequest, DiscardRequest, ProposeDirectorRequest, VoteRequest
 from api.handlers.authentication import *
 from api.utils.room_utils import check_email_status
 
 from classes.room import Room, RoomStatus
 from classes.room_hub import RoomHub
-
-from classes.role_enum import *
+from classes.game import Game
+from classes.player import Player
+from classes.role_enum import Role
+from classes.game_status_enum import GamePhase
 
 from classes.game import Vote
 
@@ -124,7 +125,7 @@ async def get_game_state(
             "last_director": game.get_last_director_user(),
             "de_procs": game.get_de_procs(),
             "fo_procs": game.get_fo_procs(),
-            "phase": game.phase,
+            "phase": game.get_phase(),
             "player_list": game.get_current_players(),
             "votes" : game.get_votes()
         }
@@ -140,7 +141,6 @@ async def start_game(
             ...,
             min_length=6,
             max_length=20,
-            description="The room wich you want to get the game state of",
         ),
         email: str = Depends(valid_credentials)):
 
@@ -219,3 +219,108 @@ async def dump_votes (room_name: str = Path(
         return {"message" : game.get_votes().__str__()}
     else:
         return {"Voting stage hasn`t finished"}
+
+
+@router.get("/{room_name}/cards", tags=["Game"], status_code=status.HTTP_200_OK)
+async def get_cards(
+    room_name: str = Path(
+        ...,
+        min_length=6,
+        max_length=20,
+    ),
+        email: str = Depends(valid_credentials)):
+
+    room = hub.get_room_by_name(room_name)
+    if email not in (room.get_user_list()):
+        raise HTTPException(
+            status_code=403, detail="You're not in this room")
+    elif room.status == RoomStatus.PREGAME:
+        raise HTTPException(
+            status_code=409, detail="The game hasn't started yet")
+
+    game = room.get_game()
+    phase = game.get_phase()
+    minister = game.get_minister_user()
+    director = game.get_director_user()
+
+    if ((phase == GamePhase.MINISTER_DISCARD and minister == email) or
+            (phase == GamePhase.DIRECTOR_DISCARD and director == email)):
+        return {"cards": game.get_cards()}
+    else:
+        raise HTTPException(
+            detail="You're not allowed to do this", status_code=405)
+
+
+@router.put("/{room_name}/discard", tags=["Game"], status_code=status.HTTP_201_CREATED)
+async def discard(body: DiscardRequest,
+                  room_name: str = Path(
+                      ...,
+                      min_length=6,
+                      max_length=20,
+                  ),
+                  email: str = Depends(valid_credentials)):
+
+    room = hub.get_room_by_name(room_name)
+
+    if email not in (room.get_user_list()):
+        raise HTTPException(
+            status_code=403, detail="You're not in this room")
+    elif room.status == RoomStatus.PREGAME:
+        raise HTTPException(
+            status_code=409, detail="The game hasn't started yet")
+
+    game = room.get_game()
+    phase = game.get_phase()
+    if (phase == GamePhase.MINISTER_DISCARD and game.get_minister_user() == email):
+        if (body.card_index not in [0, 1, 2]):
+            raise HTTPException(
+                detail="Index out of bounds", status_code=400)
+
+        game.discard(body.card_index)
+        game.set_phase(GamePhase.DIRECTOR_DISCARD)
+        return {"message": "Successfully discarded"}
+
+    elif (phase == GamePhase.DIRECTOR_DISCARD and game.get_director_user() == email):
+        if (body.card_index not in [0, 1]):
+            raise HTTPException(
+                detail="Index out of bounds", status_code=400)
+
+        game.discard(body.card_index)
+        game.proc_leftover_card()
+        game.new_minister()
+        game.set_phase(GamePhase.PROPOSE_DIRECTOR)
+        return {"message": "Successfully discarded"}
+
+    else:
+        raise HTTPException(
+            detail="You're not allowed to do this", status_code=405)
+
+
+@router.put("/{room_name}/director", tags=["Game"], status_code=status.HTTP_201_CREATED)
+async def propose_director(body: ProposeDirectorRequest,
+                           room_name: str = Path(
+                               ...,
+                               min_length=6,
+                               max_length=20,
+                           ),
+                           email: str = Depends(valid_credentials)):
+
+    room = hub.get_room_by_name(room_name)
+    if email not in (room.get_user_list()):
+        raise HTTPException(
+            status_code=403, detail="You're not in this room")
+    elif room.status == RoomStatus.PREGAME:
+        raise HTTPException(
+            status_code=409, detail="The game hasn't started yet")
+
+    game = room.get_game()
+    phase = game.get_phase()
+    minister = game.get_minister_user()
+    if (phase == GamePhase.PROPOSE_DIRECTOR and minister == email):
+        game.set_director(body.director_email)
+        game.set_phase(GamePhase.VOTE_DIRECTOR)
+        return {"message": "Director proposed successfully"}
+
+    else:
+        raise HTTPException(
+            detail="You're not allowed to do this", status_code=405)
