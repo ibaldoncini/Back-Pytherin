@@ -141,7 +141,6 @@ async def start_game(
             ...,
             min_length=6,
             max_length=20,
-            description="The room wich you want to get the game state of",
         ),
         email: str = Depends(valid_credentials)):
 
@@ -164,7 +163,6 @@ async def get_cards(
         ...,
         min_length=6,
         max_length=20,
-        description="The room wich you want to get the game state of",
     ),
         email: str = Depends(valid_credentials)):
 
@@ -195,7 +193,6 @@ async def discard(body: DiscardRequest,
                       ...,
                       min_length=6,
                       max_length=20,
-                      description="The room wich you want to get the game state of",
                   ),
                   email: str = Depends(valid_credentials)):
 
@@ -241,7 +238,6 @@ async def propose_director(body: ProposeDirectorRequest,
                                ...,
                                min_length=6,
                                max_length=20,
-                               description="The room wich you want to get the game state of",
                            ),
                            email: str = Depends(valid_credentials)):
 
