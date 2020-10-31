@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
 
-
 class RoomCreationRequest(BaseModel):
     """
     Body of the request used to create a new room,
@@ -10,3 +9,10 @@ class RoomCreationRequest(BaseModel):
                       description="The room's name")
     max_players: int = Field(
         ..., ge=5, le=10, description="Max allowed players in the room")
+
+
+class VoteRequest(BaseModel):
+    """
+    Body of the request used to vote
+    """
+    vote: str = Field(...,description="Vote = <lumos/nox>")

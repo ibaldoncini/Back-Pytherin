@@ -1,14 +1,12 @@
 # users.py
-from fastapi import APIRouter, Depends, HTTPException, status, Body
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse
 from datetime import datetime, timedelta
-from pony.orm import db_session, select, commit
-from typing import Optional
-from pydantic import Field, BaseModel
+from pony.orm import db_session, commit
 
 
 from api.models.base import db, DB_User, Validation_Tuple
-from api.models.users.user import User, Token, TokenData
+from api.models.users.user import User, Token
 from api.utils.login import *
 from api.handlers.pass_handler import *
 from api.handlers.authentication import *

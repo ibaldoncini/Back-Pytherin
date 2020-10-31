@@ -1,15 +1,10 @@
 # main.py
-from fastapi import FastAPI, Depends, Header, HTTPException, Request, Body, status
-from pony.orm import db_session, select
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import JWTError, jwt
-from datetime import datetime, timedelta
+from fastapi import FastAPI, Depends
 
 from api.routers import users, room_endpoints
 from api.routers import privileged
-from api.models.base import db, DB_User
+from api.models.base import db
 from api.handlers.pass_handler import *
-from api.models.users.user import User, Token, TokenData
 from api.handlers.authentication import verify_token
 
 
