@@ -175,6 +175,9 @@ async def vote(
 
     room = hub.get_room_by_name(room_name)
     game = room.get_game()
+    if email not in (room.get_user_list()):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+                            detail="You're not in this room")
     #!If u want to test this, u should set gamephase to VOTE_DIRECTOR
     if game.phase == GamePhase.VOTE_DIRECTOR:
 
@@ -211,6 +214,7 @@ async def dump_votes (room_name: str = Path(
     """
     room = hub.get_room_by_name(room_name)
     game = room.get_game()
+
     if len(game.get_current_players()) == len(game.votes):
         return {"message" : game.get_votes().__str__()}
     else:
