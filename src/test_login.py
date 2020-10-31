@@ -1,7 +1,7 @@
 # login_test.py
 from fastapi.testclient import TestClient
-from pony.orm import db_session, select, commit
-from api.models.base import db, DB_User
+from pony.orm import db_session, commit
+from api.models.base import DB_User
 from main import app
 
 client = TestClient(app)

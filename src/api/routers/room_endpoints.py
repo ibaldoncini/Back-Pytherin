@@ -1,22 +1,21 @@
-from fastapi import FastAPI, APIRouter, HTTPException, status, Depends, Path
-from fastapi.responses import HTMLResponse
-
-from api.models.room_models import RoomCreationRequest, DiscardRequest, ProposeDirectorRequest
+from classes.game_status_enum import GamePhase
+from fastapi import APIRouter, HTTPException, status, Depends, Path
+from api.models.room_models import RoomCreationRequest, DiscardRequest, ProposeDirectorRequest, VoteRequest
 from api.handlers.authentication import *
 from api.utils.room_utils import check_email_status
 
 from classes.room import Room, RoomStatus
 from classes.room_hub import RoomHub
-
 from classes.game import Game
 from classes.player import Player
 from classes.role_enum import Role
 from classes.game_status_enum import GamePhase
 
+from classes.game import Vote
+
 router = APIRouter()
 
 hub = RoomHub()
-
 
 @router.post("/room/new", status_code=status.HTTP_201_CREATED)
 async def create_room(
@@ -128,6 +127,7 @@ async def get_game_state(
             "fo_procs": game.get_fo_procs(),
             "phase": game.get_phase(),
             "player_list": game.get_current_players(),
+            "votes" : game.get_votes()
         }
         return json_r
     elif room.status == RoomStatus.FINISHED:
@@ -155,6 +155,70 @@ async def start_game(
     else:
         room.start_game()
         return {"message": "Succesfully started"}
+
+
+@router.put("/{room_name}/vote",tags=["Game"],status_code=status.HTTP_200_OK)
+async def vote(
+        vote_req : VoteRequest,
+        email: str = Depends(valid_credentials),
+        room_name: str = Path(
+            ...,
+            min_length=6,
+            max_length=20,
+            description="The room which you want to get the game state of",
+        )):
+    """ 
+    This endpoint registers a vote and who`s voting.
+    Throws 409 if the game is not in "voting phase"
+    Throws 400 if the vote is not Lumos or Nox
+    """
+
+    room = hub.get_room_by_name(room_name)
+    game = room.get_game()
+    if email not in (room.get_user_list()):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+                            detail="You're not in this room")
+    #!If u want to test this, u should set gamephase to VOTE_DIRECTOR
+    if game.phase == GamePhase.VOTE_DIRECTOR:
+
+        if vote_req.vote not in [Vote.LUMOS.value,Vote.NOX.value]:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT
+                                ,detail="Invalid vote")
+
+        elif email in game.get_votes().keys():
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                detail="You already voted")
+
+        else:
+            game.register_vote(vote_req.vote,email)
+    else:
+        raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED
+                            ,detail="Game is not in voting phase")
+
+    # ? mmm vs dsis
+    if len(game.get_current_players()) == len(game.votes):
+        #game.votes.clear()
+        game.set_phase(GamePhase.MINISTER_DISCARD)
+
+
+@router.get("/{room_name}/get_votes",tags=["Game"],status_code=status.HTTP_200_OK)
+async def dump_votes (room_name: str = Path(
+            ...,
+            min_length=6,
+            max_length=20,
+            description="The room which you want to get the game state of",
+            )
+    ):
+    """ 
+    Dumps the dict [User,Vote]
+    """
+    room = hub.get_room_by_name(room_name)
+    game = room.get_game()
+
+    if len(game.get_current_players()) == len(game.votes):
+        return {"message" : game.get_votes().__str__()}
+    else:
+        return {"Voting stage hasn`t finished"}
 
 
 @router.get("/{room_name}/cards", tags=["Game"], status_code=status.HTTP_200_OK)

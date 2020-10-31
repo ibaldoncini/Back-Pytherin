@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
-from pony.orm import db_session, select, commit
-from api.models.base import db, DB_User
+from pony.orm import db_session, commit
+from api.models.base import DB_User
 from main import app
 
 client = TestClient(app)
@@ -81,6 +81,65 @@ response_start = client.put(
     headers=owner
 )
 assert response_start.status_code == 201
+
+""" 
+TESTED: 
+* Vote twice
+* invalid vote
+* Not in voting phase
+"""
+
+vote1 = client.put(
+    "/pytherin/vote",
+    headers=p1,
+    json={
+        'vote' : "Lumos"
+    })
+
+vote2 = client.put(
+    "/pytherin/vote",
+    headers=p2,
+    json={
+        "vote" : "Lumos"
+    })
+vote3 = client.put(
+    "/pytherin/vote",
+    headers=p3,
+    json={
+        "vote" : "Nox"
+    })
+vote4 = client.put(
+    "/pytherin/vote",
+    headers=p4,
+    json={
+        "vote" : "Nox"
+    })
+vote5 = client.put(
+    "/pytherin/vote",
+    headers=owner,
+    json={
+        "vote" : "Lumos"
+    })
+
+print(vote1)
+print(vote2)
+print(vote3)
+print(vote4)
+print(vote5)
+
+assert vote1.status_code == 200
+assert vote2.status_code == 200 
+assert vote3.status_code == 200 
+assert vote4.status_code == 200
+assert vote5.status_code == 200
+
+
+votes = client.get(
+    "pytherin/get_votes",
+    headers=p1,
+)
+
+print(votes.json())
 
 response_get_ingame = client.get(
     "/pytherin/game_state",

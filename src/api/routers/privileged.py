@@ -1,11 +1,9 @@
 # users.py
-from fastapi import APIRouter, Depends, HTTPException, status, Body
-from pony.orm import db_session, select
-from typing import Optional
-from pydantic import Field, BaseModel
+from fastapi import APIRouter, Depends, HTTPException, status
+from pony.orm import db_session
 
-from api.models.base import db, DB_User
-from api.models.users.user import User, Token, TokenData
+from api.models.base import db
+from api.models.users.user import User
 from api.utils.login import *
 from api.handlers.authentication import *
 
@@ -31,7 +29,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
                 status_code=400, detail="Incorrect email or password")
         user = dict(zip(keys, user_tuple))
     if user is None:
-        raise credentials_exception
+        raise credentials_excpetion
     return user
 
 
