@@ -10,3 +10,21 @@ class RoomCreationRequest(BaseModel):
                       description="The room's name")
     max_players: int = Field(
         ..., ge=5, le=10, description="Max allowed players in the room")
+
+
+class DiscardRequest(BaseModel):
+    """
+    Body of the request used for discarding a card.
+    Used by minister and director only.
+    """
+    card_index: int = Field(..., ge=0, le=2,
+                            description="The index of the card to be discarded")
+
+
+class ProposeDirectorRequest(BaseModel):
+    """
+    Body of the request used for proposing a director.
+    Used by minister only.
+    """
+    director_email: str = Field(...,
+                                description="The email of the user to be proposed as director")

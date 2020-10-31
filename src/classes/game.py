@@ -21,6 +21,7 @@ class Game:
         self.last_minister: Player = None
         self.last_director: Player = None
         self.phase: GamePhase = GamePhase.PROPOSE_DIRECTOR
+        self.cards: List[Card] = self.deck.take_3_cards()
 
     def init_players(self, users: List[str]):
         # Create empty players
@@ -118,3 +119,27 @@ class Game:
         last_minister_index = self.players.index(self.last_minister)
         new_minister_index = (last_minister_index + 1) % self.n_of_players
         self.minister = self.players[new_minister_index]
+
+    def set_director(self, email):
+        self.director = self.__get_player_by_email(email)
+
+    def get_cards(self):
+        return self.cards
+
+    def discard(self, index):
+        self.cards.pop(index)
+
+    def proc_leftover_card(self):
+        card = self.cards.pop(0)
+        self.board.proclaim(card)
+        self.deal_cards()
+
+    def deal_cards(self):
+        new_cards = self.deck.take_3_cards()
+        self.cards = new_cards
+
+    def get_phase(self):
+        return self.phase
+
+    def set_phase(self, phase: GamePhase):
+        self.phase = phase
