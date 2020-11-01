@@ -81,7 +81,7 @@ async def join_room(
         return {"message": f"Joined {room_name}"}
 
 
-@router.get("/{room_name}/game_state", status_code=status.HTTP_200_OK)
+@router.get("/{room_name}/game_state", tags=["Game"], status_code=status.HTTP_200_OK)
 async def get_game_state(
         room_name: str = Path(
             ...,
@@ -171,7 +171,7 @@ async def propose_director(body: ProposeDirectorRequest,
         if body.director_email not in game.get_current_players():
             raise HTTPException(
                 status_code=404, detail="Player not found")
-        elif (body.director_email == game.get_last_director_user() 
+        elif (body.director_email == game.get_last_director_user()
               or minister == body.director_email):
             raise HTTPException(
                 status_code=403, detail="That player cannot be the director this round")

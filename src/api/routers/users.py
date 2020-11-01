@@ -92,7 +92,7 @@ async def validate_user(email: str, code: str):
         raise HTTPException(status_code=404, detail="Email not found")
 
 
-@router.post("/users", response_model=Token, status_code=200)
+@router.post("/users", tags=["Login"], response_model=Token, status_code=200)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """
     LogIn endpoint, first, authenticates the user checking that the
@@ -114,7 +114,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.put("/users/refresh", response_model=Token, status_code=201)
+@router.put("/users/refresh", tags=["Login"], response_model=Token, status_code=201)
 async def refresh_token(email: str = Depends(valid_credentials)):
     """
     Endpoint that creates a new web token.
@@ -127,12 +127,23 @@ async def refresh_token(email: str = Depends(valid_credentials)):
             detail="Incorrect password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"email": email},
-        expires_delta=access_token_expires,
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    try:
+        with db_session:
+            username: str = db.get(
+                "select username from DB_User where email=$email")
+
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"email": email, "username": username},
+            expires_delta=access_token_expires,
+        )
+        return {"access_token": access_token, "token_type": "bearer"}
+    except:
+        raise HTTPException(
+            status_code=405,
+            detail="Something went wrong"
+        )
 
 
 @router.post("/token", response_model=Token, status_code=200)
@@ -150,28 +161,3 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         expires_delta=access_token_expires,
     )
     return {"access_token": access_token, "token_type": "bearer"}
-
-
-"""
-@router.get("/users", tags=["Users"])
-@db_session
-async def dump():
-    res = []
-    for row in db.select("* from DB_User"):
-        res.append((row.email, row.email_confirmed))
-
-    print(res.__str__())
-    return {"Users: ": res.__str__()}
-
-
-
-@router.get("/users/validation_tuple")
-@db_session
-async def dump_validation():
-    res = []
-    for row in db.select("email,code from Validation_Tuple")[:]:
-        res.append(row)
-
-    print(res.__str__())
-    return {"Users: ": res.__str__()}
-"""
