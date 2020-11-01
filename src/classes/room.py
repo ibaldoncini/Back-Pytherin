@@ -2,6 +2,7 @@ from typing import List
 from enum import Enum, unique
 
 from classes.game import Game
+from classes.game_status_enum import GamePhase
 
 
 @unique
@@ -81,3 +82,12 @@ class Room:
 
     def get_game(self):
         return self.game
+
+    def set_status(self, status: RoomStatus):
+        self.status = status
+
+    def update_status(self):
+        game = self.get_game()
+        phase = game.get_phase()
+        if (phase in [GamePhase.FO_WON, GamePhase.DE_WON]):
+            self.set_status(RoomStatus.FINISHED)

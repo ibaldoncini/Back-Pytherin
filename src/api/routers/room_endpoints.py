@@ -94,6 +94,7 @@ async def get_game_state(
         email: str = Depends(valid_credentials)):
 
     room = hub.get_room_by_name(room_name)
+
     if not email in room.get_user_list():
         raise HTTPException(status_code=403, detail="You're not in this room")
     elif room.status == RoomStatus.PREGAME:
@@ -128,7 +129,9 @@ async def get_game_state(
         return json_r
     elif room.status == RoomStatus.FINISHED:
         # show results TO DO
-        return {"message": "Game has finished"}
+        game = room.get_game()
+        winner = game.get_phase()
+        return {"message": f"Game has finished, {winner.name}"}
 
 
 @router.put("/{room_name}/start", tags=["Game"], status_code=status.HTTP_201_CREATED)
@@ -174,9 +177,16 @@ async def propose_director(body: ProposeDirectorRequest,
     phase = game.get_phase()
     minister = game.get_minister_user()
     if (phase == GamePhase.PROPOSE_DIRECTOR and minister == email):
-        game.set_director(body.director_email)
-        game.set_phase(GamePhase.VOTE_DIRECTOR)
-        return {"message": "Director proposed successfully"}
+        if body.director_email not in game.get_current_players():
+            raise HTTPException(
+                status_code=404, detail="Player not found")
+        elif body.director_email == game.get_last_director_user():
+            raise HTTPException(
+                status_code=403, detail="That player cannot be the director this round")
+        else:
+            game.set_director(body.director_email)
+            game.set_phase(GamePhase.VOTE_DIRECTOR)
+            return {"message": "Director proposed successfully"}
 
     else:
         raise HTTPException(
@@ -221,6 +231,7 @@ async def vote(
 
     if len(game.get_current_players()) == len(game.votes):
         game.compute_votes()
+        room.update_status()
 
     return {"message": "Succesfully voted!"}
 
@@ -303,6 +314,7 @@ async def discard(body: DiscardRequest,
 
         game.discard(body.card_index)
         game.proc_leftover_card()
+        room.update_status()
         return {"message": "Successfully discarded"}
 
     else:

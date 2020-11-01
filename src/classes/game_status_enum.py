@@ -9,6 +9,8 @@ class GamePhase(Enum):
     VOTE_DIRECTOR = auto()
     MINISTER_DISCARD = auto()
     DIRECTOR_DISCARD = auto()
+    DE_WON = auto()
+    FO_WON = auto()
 
     def __str__(self):
         return self.name
