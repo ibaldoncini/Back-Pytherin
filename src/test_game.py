@@ -93,32 +93,32 @@ vote1 = client.put(
     "/pytherin/vote",
     headers=p1,
     json={
-        'vote' : "Lumos"
+        'vote': "Lumos"
     })
 
 vote2 = client.put(
     "/pytherin/vote",
     headers=p2,
     json={
-        "vote" : "Lumos"
+        "vote": "Lumos"
     })
 vote3 = client.put(
     "/pytherin/vote",
     headers=p3,
     json={
-        "vote" : "Nox"
+        "vote": "Nox"
     })
 vote4 = client.put(
     "/pytherin/vote",
     headers=p4,
     json={
-        "vote" : "Nox"
+        "vote": "Nox"
     })
 vote5 = client.put(
     "/pytherin/vote",
     headers=owner,
     json={
-        "vote" : "Lumos"
+        "vote": "Lumos"
     })
 
 print(vote1)
@@ -128,8 +128,8 @@ print(vote4)
 print(vote5)
 
 assert vote1.status_code == 200
-assert vote2.status_code == 200 
-assert vote3.status_code == 200 
+assert vote2.status_code == 200
+assert vote3.status_code == 200
 assert vote4.status_code == 200
 assert vote5.status_code == 200
 

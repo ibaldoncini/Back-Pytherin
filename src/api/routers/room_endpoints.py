@@ -1,7 +1,7 @@
-from classes.game_status_enum import GamePhase
 from fastapi import APIRouter, HTTPException, status, Depends, Path
 from api.models.room_models import RoomCreationRequest, DiscardRequest, ProposeDirectorRequest, VoteRequest
 from api.handlers.authentication import *
+from api.handlers.game_checks import *
 from api.utils.room_utils import check_email_status
 
 from classes.room import Room, RoomStatus
@@ -10,12 +10,12 @@ from classes.game import Game
 from classes.player import Player
 from classes.role_enum import Role
 from classes.game_status_enum import GamePhase
-
 from classes.game import Vote
 
 router = APIRouter()
 
 hub = RoomHub()
+
 
 @router.post("/room/new", status_code=status.HTTP_201_CREATED)
 async def create_room(
@@ -36,11 +36,7 @@ async def create_room(
     max_players = room_info.max_players
     email_confirmed = await check_email_status(email)
 
-    if not email:
-        raise HTTPException(
-            status_code=401, detail="You need to be logged in to create a new room"
-        )
-    elif not email_confirmed:
+    if not email_confirmed:
         raise HTTPException(status_code=403, detail="E-mail not confirmed")
     elif room_name in (hub.all_rooms()):
         raise HTTPException(status_code=409, detail="Room name already in use")
@@ -127,7 +123,7 @@ async def get_game_state(
             "fo_procs": game.get_fo_procs(),
             "phase": game.get_phase(),
             "player_list": game.get_current_players(),
-            "votes" : game.get_votes()
+            "votes": game.get_votes()
         }
         return json_r
     elif room.status == RoomStatus.FINISHED:
@@ -157,15 +153,44 @@ async def start_game(
         return {"message": "Succesfully started"}
 
 
-@router.put("/{room_name}/vote",tags=["Game"],status_code=status.HTTP_200_OK)
+@router.put("/{room_name}/director", tags=["Game"], status_code=status.HTTP_201_CREATED)
+async def propose_director(body: ProposeDirectorRequest,
+                           room_name: str = Path(
+                               ...,
+                               min_length=6,
+                               max_length=20,
+                           ),
+                           email: str = Depends(valid_credentials)):
+
+    room = hub.get_room_by_name(room_name)
+    if email not in (room.get_user_list()):
+        raise HTTPException(
+            status_code=403, detail="You're not in this room")
+    elif room.status == RoomStatus.PREGAME:
+        raise HTTPException(
+            status_code=409, detail="The game hasn't started yet")
+
+    game = room.get_game()
+    phase = game.get_phase()
+    minister = game.get_minister_user()
+    if (phase == GamePhase.PROPOSE_DIRECTOR and minister == email):
+        game.set_director(body.director_email)
+        game.set_phase(GamePhase.VOTE_DIRECTOR)
+        return {"message": "Director proposed successfully"}
+
+    else:
+        raise HTTPException(
+            detail="You're not allowed to do this", status_code=405)
+
+
+@router.put("/{room_name}/vote", tags=["Game"], status_code=status.HTTP_200_OK)
 async def vote(
-        vote_req : VoteRequest,
+        vote_req: VoteRequest,
         email: str = Depends(valid_credentials),
         room_name: str = Path(
             ...,
             min_length=6,
             max_length=20,
-            description="The room which you want to get the game state of",
         )):
     """ 
     This endpoint registers a vote and who`s voting.
@@ -176,39 +201,37 @@ async def vote(
     room = hub.get_room_by_name(room_name)
     game = room.get_game()
     if email not in (room.get_user_list()):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="You're not in this room")
-    #!If u want to test this, u should set gamephase to VOTE_DIRECTOR
+
     if game.phase == GamePhase.VOTE_DIRECTOR:
 
-        if vote_req.vote not in [Vote.LUMOS.value,Vote.NOX.value]:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT
-                                ,detail="Invalid vote")
-
+        if vote_req.vote not in [Vote.LUMOS.value, Vote.NOX.value]:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Invalid vote")
         elif email in game.get_votes().keys():
             raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                                 detail="You already voted")
-
         else:
-            game.register_vote(vote_req.vote,email)
+            game.register_vote(vote_req.vote, email)
+
     else:
-        raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED
-                            ,detail="Game is not in voting phase")
+        raise HTTPException(
+            status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Game is not in voting phase")
 
-    # ? mmm vs dsis
     if len(game.get_current_players()) == len(game.votes):
-        #game.votes.clear()
-        game.set_phase(GamePhase.MINISTER_DISCARD)
+        game.compute_votes()
+
+    return {"message": "Succesfully voted!"}
 
 
-@router.get("/{room_name}/get_votes",tags=["Game"],status_code=status.HTTP_200_OK)
-async def dump_votes (room_name: str = Path(
-            ...,
-            min_length=6,
-            max_length=20,
-            description="The room which you want to get the game state of",
-            )
-    ):
+@router.get("/{room_name}/get_votes", tags=["Game"], status_code=status.HTTP_200_OK)
+async def dump_votes(room_name: str = Path(
+        ...,
+        min_length=6,
+        max_length=20,
+        description="The room which you want to get the game state of",
+)):
     """ 
     Dumps the dict [User,Vote]
     """
@@ -216,7 +239,7 @@ async def dump_votes (room_name: str = Path(
     game = room.get_game()
 
     if len(game.get_current_players()) == len(game.votes):
-        return {"message" : game.get_votes().__str__()}
+        return {"message": game.get_votes().__str__()}
     else:
         return {"Voting stage hasn`t finished"}
 
@@ -260,14 +283,7 @@ async def discard(body: DiscardRequest,
                   ),
                   email: str = Depends(valid_credentials)):
 
-    room = hub.get_room_by_name(room_name)
-
-    if email not in (room.get_user_list()):
-        raise HTTPException(
-            status_code=403, detail="You're not in this room")
-    elif room.status == RoomStatus.PREGAME:
-        raise HTTPException(
-            status_code=409, detail="The game hasn't started yet")
+    room = await check_user_in_room_in_game(email, room_name, hub)
 
     game = room.get_game()
     phase = game.get_phase()
@@ -287,39 +303,7 @@ async def discard(body: DiscardRequest,
 
         game.discard(body.card_index)
         game.proc_leftover_card()
-        game.new_minister()
-        game.set_phase(GamePhase.PROPOSE_DIRECTOR)
         return {"message": "Successfully discarded"}
-
-    else:
-        raise HTTPException(
-            detail="You're not allowed to do this", status_code=405)
-
-
-@router.put("/{room_name}/director", tags=["Game"], status_code=status.HTTP_201_CREATED)
-async def propose_director(body: ProposeDirectorRequest,
-                           room_name: str = Path(
-                               ...,
-                               min_length=6,
-                               max_length=20,
-                           ),
-                           email: str = Depends(valid_credentials)):
-
-    room = hub.get_room_by_name(room_name)
-    if email not in (room.get_user_list()):
-        raise HTTPException(
-            status_code=403, detail="You're not in this room")
-    elif room.status == RoomStatus.PREGAME:
-        raise HTTPException(
-            status_code=409, detail="The game hasn't started yet")
-
-    game = room.get_game()
-    phase = game.get_phase()
-    minister = game.get_minister_user()
-    if (phase == GamePhase.PROPOSE_DIRECTOR and minister == email):
-        game.set_director(body.director_email)
-        game.set_phase(GamePhase.VOTE_DIRECTOR)
-        return {"message": "Director proposed successfully"}
 
     else:
         raise HTTPException(
