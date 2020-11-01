@@ -11,3 +11,11 @@ async def check_email_status(email: str):
             return email_confirmed
         except BaseException:
             return None
+
+
+def votes_to_json (votes):
+    res = list()
+    for key in votes:
+        res.append({"user" : key, "vote" : votes[key]})
+
+    return res

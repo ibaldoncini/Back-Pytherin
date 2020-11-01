@@ -2,12 +2,10 @@ from fastapi import APIRouter, HTTPException, status, Depends, Path
 from api.models.room_models import RoomCreationRequest, DiscardRequest, ProposeDirectorRequest, VoteRequest
 from api.handlers.authentication import *
 from api.handlers.game_checks import *
-from api.utils.room_utils import check_email_status
+from api.utils.room_utils import check_email_status, votes_to_json
 
 from classes.room import Room, RoomStatus
 from classes.room_hub import RoomHub
-from classes.game import Game
-from classes.player import Player
 from classes.role_enum import Role
 from classes.game_status_enum import GamePhase
 from classes.game import Vote
@@ -124,7 +122,7 @@ async def get_game_state(
             "fo_procs": game.get_fo_procs(),
             "phase": game.get_phase(),
             "player_list": game.get_current_players(),
-            "votes": game.get_votes()
+            "votes": votes_to_json(game.get_votes())
         }
         return json_r
     elif room.status == RoomStatus.FINISHED:
@@ -165,14 +163,7 @@ async def propose_director(body: ProposeDirectorRequest,
                            ),
                            email: str = Depends(valid_credentials)):
 
-    room = hub.get_room_by_name(room_name)
-    if email not in (room.get_user_list()):
-        raise HTTPException(
-            status_code=403, detail="You're not in this room")
-    elif room.status == RoomStatus.PREGAME:
-        raise HTTPException(
-            status_code=409, detail="The game hasn't started yet")
-
+    room = check_game_preconditions(email, room_name, hub)
     game = room.get_game()
     phase = game.get_phase()
     minister = game.get_minister_user()
@@ -180,7 +171,8 @@ async def propose_director(body: ProposeDirectorRequest,
         if body.director_email not in game.get_current_players():
             raise HTTPException(
                 status_code=404, detail="Player not found")
-        elif body.director_email == game.get_last_director_user():
+        elif (body.director_email == game.get_last_director_user() 
+              or minister == body.director_email):
             raise HTTPException(
                 status_code=403, detail="That player cannot be the director this round")
         else:
@@ -208,11 +200,8 @@ async def vote(
     Throws 400 if the vote is not Lumos or Nox
     """
 
-    room = hub.get_room_by_name(room_name)
+    room = check_game_preconditions(email, room_name, hub)
     game = room.get_game()
-    if email not in (room.get_user_list()):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                            detail="You're not in this room")
 
     if game.phase == GamePhase.VOTE_DIRECTOR:
 
@@ -242,7 +231,7 @@ async def dump_votes(room_name: str = Path(
         min_length=6,
         max_length=20,
         description="The room which you want to get the game state of",
-)):
+    )):
     """ 
     Dumps the dict [User,Vote]
     """
@@ -252,7 +241,7 @@ async def dump_votes(room_name: str = Path(
     if len(game.get_current_players()) == len(game.votes):
         return {"message": game.get_votes().__str__()}
     else:
-        return {"Voting stage hasn`t finished"}
+        return {"message":"Voting stage hasn`t finished"}
 
 
 @router.get("/{room_name}/cards", tags=["Game"], status_code=status.HTTP_200_OK)
@@ -264,13 +253,7 @@ async def get_cards(
     ),
         email: str = Depends(valid_credentials)):
 
-    room = hub.get_room_by_name(room_name)
-    if email not in (room.get_user_list()):
-        raise HTTPException(
-            status_code=403, detail="You're not in this room")
-    elif room.status == RoomStatus.PREGAME:
-        raise HTTPException(
-            status_code=409, detail="The game hasn't started yet")
+    room = check_game_preconditions(email, room_name, hub)
 
     game = room.get_game()
     phase = game.get_phase()
@@ -294,7 +277,7 @@ async def discard(body: DiscardRequest,
                   ),
                   email: str = Depends(valid_credentials)):
 
-    room = await check_user_in_room_in_game(email, room_name, hub)
+    room = check_game_preconditions(email, room_name, hub)
 
     game = room.get_game()
     phase = game.get_phase()

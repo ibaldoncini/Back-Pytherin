@@ -120,6 +120,7 @@ class Game:
     def get_votes(self):
         return self.votes
 
+
     def compute_votes(self):
         votes = Counter(self.votes.values())
         lumos_count = votes['Lumos']
@@ -138,7 +139,7 @@ class Game:
     def register_vote(self, vote, email):
         self.votes[email] = vote
 
-    def new_minister(self):
+    def change_minister(self):
         """
         Method that changes the current minister, it will be called at the
         beggining of a new turn.
@@ -167,7 +168,7 @@ class Game:
         self.last_director = self.director
         self.director = None
         self.votes = dict()
-        self.new_minister()
+        self.change_minister()
 
         if self.board.get_de_procs() >= 6:
             self.set_phase(GamePhase.DE_WON)
