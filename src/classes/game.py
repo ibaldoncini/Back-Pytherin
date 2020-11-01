@@ -7,7 +7,7 @@ from classes.player import Player
 from classes.board import Board
 from classes.role_enum import Role
 from classes.loyalty_enum import Loyalty
-from classes.deck import Deck
+from classes.deck import Deck, Card
 from classes.game_status_enum import GamePhase
 
 
@@ -125,15 +125,15 @@ class Game:
         lumos_count = votes['Lumos']
         nox_count = votes['Nox']
         if (lumos_count >= nox_count):
-            game.set_phase(GamePhase.MINISTER_DISCARD)
+            if (self.director.is_voldemort() and self.board.get_de_procs() >= 3):
+                self.set_phase(GamePhase.DE_WON)
+            else:
+                self.set_phase(GamePhase.MINISTER_DISCARD)
         else:
             # chaos counter ++
-            game.set_director(None)
-            game.set_phase(GamePhase.PROPOSE_DIRECTOR)
-        self.votes = dict()  # clean the votes
-
-    def set_phase(self, phase: GamePhase):
-        self.phase = phase
+            self.set_director(None)
+            self.set_phase(GamePhase.PROPOSE_DIRECTOR)
+          # clean the votes
 
     def register_vote(self, vote, email):
         self.votes[email] = vote
@@ -145,6 +145,7 @@ class Game:
         It changes the minister just assigning the role to the next player in
         the list of players of the match.
         """
+
         self.last_minister = self.minister
         last_minister_index = self.players.index(self.last_minister)
         new_minister_index = (last_minister_index + 1) % self.n_of_players
@@ -165,8 +166,15 @@ class Game:
         self.deal_cards()
         self.last_director = self.director
         self.director = None
+        self.votes = dict()
         self.new_minister()
-        self.set_phase(GamePhase.PROPOSE_DIRECTOR)
+
+        if self.board.get_de_procs() >= 6:
+            self.set_phase(GamePhase.DE_WON)
+        elif self.board.get_fo_procs() >= 5:
+            self.set_phase(GamePhase.FO_WON)
+        else:
+            self.set_phase(GamePhase.PROPOSE_DIRECTOR)
 
     def deal_cards(self):
         new_cards = self.deck.take_3_cards()
