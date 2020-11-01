@@ -225,25 +225,6 @@ async def vote(
     return {"message": "Succesfully voted!"}
 
 
-@router.get("/{room_name}/get_votes", tags=["Game"], status_code=status.HTTP_200_OK)
-async def dump_votes(room_name: str = Path(
-        ...,
-        min_length=6,
-        max_length=20,
-        description="The room which you want to get the game state of",
-    )):
-    """ 
-    Dumps the dict [User,Vote]
-    """
-    room = hub.get_room_by_name(room_name)
-    game = room.get_game()
-
-    if len(game.get_current_players()) == len(game.votes):
-        return {"message": game.get_votes().__str__()}
-    else:
-        return {"message":"Voting stage hasn`t finished"}
-
-
 @router.get("/{room_name}/cards", tags=["Game"], status_code=status.HTTP_200_OK)
 async def get_cards(
     room_name: str = Path(

@@ -5,7 +5,6 @@ from main import app
 
 client = TestClient(app)
 
-
 def create_and_login(email: str):
     client.post(
         "/users/register",
@@ -80,7 +79,32 @@ response_start = client.put(
     "/pytherin/start",
     headers=owner
 )
+
+response_get_ingame = client.get(
+    "/pytherin/game_state",
+    headers=p1
+)
+
+print(response_get_ingame.json())
+
 assert response_start.status_code == 201
+
+players = [owner,p1,p2,p3,p4]
+
+director_email = "player1@email.com"
+minister_email = None
+
+for player in range(0,5):
+    response = client.put(
+        "pytherin/director",
+        json={"director_email" : director_email},
+        headers=players[player]
+    )
+    if response.status_code == 200:
+        print("Minister: " + player)
+        print("Director: " + "p1")
+        break
+
 
 """ 
 TESTED: 
@@ -121,29 +145,54 @@ vote5 = client.put(
         "vote": "Lumos"
     })
 
-print(vote1)
-print(vote2)
-print(vote3)
-print(vote4)
-print(vote5)
-
 assert vote1.status_code == 200
 assert vote2.status_code == 200
 assert vote3.status_code == 200
 assert vote4.status_code == 200
 assert vote5.status_code == 200
 
-
-votes = client.get(
-    "pytherin/get_votes",
-    headers=p1,
-)
-
-print(votes.json())
-
 response_get_ingame = client.get(
     "/pytherin/game_state",
     headers=p2
 )
-assert response_get_ingame.status_code == 200
-print(response_get_ingame.json())
+
+for player in range(0,5):
+    response = client.get(
+        "pytherin/cards",
+        headers=players[player]
+    )
+    print(response.json())
+
+
+
+for player in range(0,5):
+    response = client.put(
+        "pytherin/discard",
+        json= {"card_index" : 0},
+        headers=players[player]
+    )
+    print(response.json())
+
+
+for player in range(0,5):
+    response = client.get(
+        "pytherin/cards",
+        headers=players[player]
+    )
+    print(response.json())
+
+
+for player in range(0,5):
+    response = client.put(
+        "pytherin/discard",
+        json= {"card_index" : 0},
+        headers=players[player]
+    )
+    print(response.json())
+
+response_get_postr1 = client.get(
+    "/pytherin/game_state",
+    headers=p2
+)
+
+print(response_get_postr1.json())

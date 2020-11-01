@@ -12,7 +12,7 @@ def test_register_valid_user():
                 "password" : "Chacarita1",
                 "icon" : "string"
               })
-  assert response.status_code == 200
+  assert response.status_code == 201
 
 def test_register_already_registered_username ():
   response = client.post("users/register",
