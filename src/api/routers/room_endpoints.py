@@ -119,7 +119,7 @@ async def get_game_state(
     if not email in room.get_user_list():
         raise HTTPException(status_code=403, detail="You're not in this room")
     elif room.status == RoomStatus.PREGAME:
-        return {"users": room.users, "owner": room.owner}
+        return {"room_status": room.status, "users": room.users, "owner": room.owner}
     elif room.status == RoomStatus.IN_GAME:
         game = room.get_game()
 
@@ -134,6 +134,7 @@ async def get_game_state(
             voldemort = ""
 
         json_r = {
+            "room_status": room.status,
             "my_role": my_role,
             "death_eaters": de_list,
             "voldemort": voldemort,
@@ -152,7 +153,7 @@ async def get_game_state(
         # show results TO DO
         game = room.get_game()
         winner = game.get_phase()
-        return {"message": f"Game has finished, {winner.name}"}
+        return {"room_status": room.status, "message": f"Game has finished, {winner.name}"}
 
 
 @router.put("/{room_name}/start", tags=["Game"], status_code=status.HTTP_201_CREATED)
