@@ -1,5 +1,6 @@
 # main.py
 from fastapi import FastAPI, Depends
+from starlette.middleware.cors import CORSMiddleware
 
 from api.routers import users, room_endpoints
 from api.routers import privileged
@@ -21,3 +22,10 @@ app.include_router(room_endpoints.router, dependencies=[Depends(verify_token)])
 # testear el correcto funcionamiento de los tokens, pues los endpoints
 # que estan tienen como dependencia la funcion verify_token definida mas arriba
 app.include_router(privileged.router, dependencies=[Depends(verify_token)])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[""],
+    allow_credentials=True,
+    allow_methods=[""],
+    allow_headers=["*"],
+)
