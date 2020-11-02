@@ -91,6 +91,29 @@ async def get_game_state(
         ),
         email: str = Depends(valid_credentials)):
 
+    """
+    Endpoint for getting the state of the game at every moment
+
+    Will return the list of users in the room, and the room owner if the game
+    hasn't started yet.
+
+    A json containing the following game info if is has already started:
+            "my_role": the role of the player who requested the game sate,
+            "death_eaters": if my role is DE, this contains a list of the other deatheaters,
+            "voldemort": if you are DE, who is voldemort,
+            "minister": this turn's minister,
+            "director": the proposed director,
+            "last_minister": the previous minister,
+            "last_director": the previous director,
+            "de_procs": DeathEater proclamations,
+            "fo_procs": FenixOrder proclamations,
+            "phase": the phase the game is in propose director, vote, 
+                     minister discard ,director discard, (1,2,3,4) respectively,
+            "player_list": the players in the game,
+            "votes": the player votes for this turn.
+
+    Or it will return the winner if the game is over
+    """
     room = hub.get_room_by_name(room_name)
 
     if not email in room.get_user_list():
@@ -140,7 +163,11 @@ async def start_game(
             max_length=20,
         ),
         email: str = Depends(valid_credentials)):
+    """
+    Endpoint for starting the game, should only be used by the room owner.
 
+    Will only work if there are 5 players or more.
+    """
     room = hub.get_room_by_name(room_name)
 
     if (room.owner != email):
@@ -163,6 +190,9 @@ async def propose_director(body: ProposeDirectorRequest,
                            ),
                            email: str = Depends(valid_credentials)):
 
+    """
+    Endpoint used by the minister to propose the director
+    """
     room = check_game_preconditions(email, room_name, hub)
     game = room.get_game()
     phase = game.get_phase()
@@ -234,6 +264,12 @@ async def get_cards(
     ),
         email: str = Depends(valid_credentials)):
 
+    """
+    Endpoint for getting the cards, used both by minister and director, but at their respective times.
+    Will return a list similar to this:
+
+    ['Order of the Fenix proclamation', 'Order of the Fenix proclamation', 'Death Eater proclamation']
+    """
     room = check_game_preconditions(email, room_name, hub)
 
     game = room.get_game()
@@ -257,6 +293,13 @@ async def discard(body: DiscardRequest,
                       max_length=20,
                   ),
                   email: str = Depends(valid_credentials)):
+
+    """
+    Endpoint used for discarding a card, both by minister and director.
+
+    Expects a body containing 1 field ("card_index") that represents the index of the card
+    you want to discard (as returned by the /cards endpoint)
+    """
 
     room = check_game_preconditions(email, room_name, hub)
 

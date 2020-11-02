@@ -120,7 +120,6 @@ class Game:
     def get_votes(self):
         return self.votes
 
-
     def compute_votes(self):
         votes = Counter(self.votes.values())
         lumos_count = votes['Lumos']
@@ -134,7 +133,6 @@ class Game:
             # chaos counter ++
             self.set_director(None)
             self.set_phase(GamePhase.PROPOSE_DIRECTOR)
-          # clean the votes
 
     def register_vote(self, vote, email):
         self.votes[email] = vote
