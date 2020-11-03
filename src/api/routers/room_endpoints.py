@@ -15,7 +15,7 @@ router = APIRouter()
 hub = RoomHub()
 
 
-@router.post("/room/new", status_code=status.HTTP_201_CREATED)
+@router.post("/room/new", tags=["Room"], status_code=status.HTTP_201_CREATED)
 async def create_room(
     room_info: RoomCreationRequest, email: str = Depends(valid_credentials)
 ):
@@ -44,7 +44,7 @@ async def create_room(
         return {"message": "Room created successfully"}
 
 
-@router.get("/room/join/{room_name}", status_code=status.HTTP_200_OK)
+@router.get("/room/join/{room_name}", tags=["Room"], status_code=status.HTTP_200_OK)
 async def join_room(
         room_name: str = Path(
             ...,
@@ -239,7 +239,7 @@ async def vote(
 
         if vote_req.vote not in [Vote.LUMOS.value, Vote.NOX.value]:
             raise HTTPException(
-                status_code=status.HTTP_400_CONFLICT, detail="Invalid vote")
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid vote")
         elif email in game.get_votes().keys():
             raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                                 detail="You already voted")

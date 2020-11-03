@@ -39,7 +39,7 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     return current_user
 
 
-@router.get("/users/all")
+@router.get("/users/all", tags=["Users"], status_code=200)
 @db_session
 async def dump():
     '''
@@ -49,7 +49,7 @@ async def dump():
     return ()
 
 
-@router.get("/users/me", status_code=200)
+@router.get("/users/me", status_code=200, tags=["Users"])
 async def read_users(current_user: User = Depends(get_current_active_user)):
     '''
     API endpoint that serves for testing the token validation. Returns info about
