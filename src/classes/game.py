@@ -124,13 +124,13 @@ class Game:
         votes = Counter(self.votes.values())
         lumos_count = votes['Lumos']
         nox_count = votes['Nox']
+
         if (lumos_count >= nox_count):
             if (self.director.is_voldemort() and self.board.get_de_procs() >= 3):
                 self.set_phase(GamePhase.DE_WON)
             else:
                 self.set_phase(GamePhase.MINISTER_DISCARD)
         else:
-            # chaos counter ++
             self.set_director(None)
             self.set_phase(GamePhase.PROPOSE_DIRECTOR)
 
@@ -151,7 +151,10 @@ class Game:
         self.minister = self.players[new_minister_index]
 
     def set_director(self, email):
-        self.director = self.__get_player_by_email(email)
+        if email is None:
+            self.director = None
+        else:
+            self.director = self.__get_player_by_email(email)
 
     def get_cards(self):
         return self.cards
