@@ -72,8 +72,7 @@ async def join_room(
     elif not room:
         raise HTTPException(status_code=404, detail="Room not found")
     elif email in room.get_user_list():
-        raise HTTPException(
-            status_code=409, detail="You are already in this room")
+        return {"message": f"Joined {room_name}"}
     elif not room.is_open():
         raise HTTPException(status_code=403, detail="Room is full or in-game")
     else:
@@ -151,8 +150,17 @@ async def get_game_state(
         return json_r
     elif room.status == RoomStatus.FINISHED:
         # show results TO DO
+
         game = room.get_game()
         winner = game.get_phase()
+
+        game = room.get_game()
+
+        my_role = game.get_player_role(email)
+
+        de_list = game.get_de_list()
+        voldemort = game.get_voldemort()
+
         json_r = {
             "room_status": room.status,
             "my_role": my_role,
