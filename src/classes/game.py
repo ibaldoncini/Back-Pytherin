@@ -130,8 +130,10 @@ class Game:
                 self.set_phase(GamePhase.DE_WON)
             else:
                 self.set_phase(GamePhase.MINISTER_DISCARD)
+
         else:
             self.set_director(None)
+            self.votes.clear()
             self.set_phase(GamePhase.PROPOSE_DIRECTOR)
 
     def register_vote(self, vote, email):
