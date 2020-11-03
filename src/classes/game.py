@@ -134,6 +134,7 @@ class Game:
         else:
             self.set_director(None)
             self.votes.clear()
+            self.change_minister()
             self.set_phase(GamePhase.PROPOSE_DIRECTOR)
 
     def register_vote(self, vote, email):
