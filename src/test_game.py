@@ -5,6 +5,7 @@ from main import app
 
 client = TestClient(app)
 
+
 def create_and_login(email: str):
     client.post(
         "/users/register",
@@ -89,23 +90,29 @@ print(response_get_ingame.json())
 
 assert response_start.status_code == 201
 
-players = [owner,p1,p2,p3,p4]
+players = [owner, p1, p2, p3, p4]
 
 director_email = "player1@email.com"
 minister_email = None
 
-for player in range(0,5):
+for player in range(0, 5):
     response = client.put(
         "pytherin/director",
-        json={"director_email" : director_email},
+        json={"director_email": director_email},
         headers=players[player]
     )
-    if response.status_code == 200:
-        print("Minister: " + player)
+    if response.status_code == 201:
+        print("Minister: p" + str(player))
         print("Director: " + "p1")
         break
 
-
+response_get_ingame2 = client.get(
+    "/pytherin/game_state",
+    headers=p1
+)
+print("\n")
+print(response_get_ingame2.json())
+print("\n")
 """ 
 TESTED: 
 * Vote twice
@@ -145,6 +152,7 @@ vote5 = client.put(
         "vote": "Lumos"
     })
 
+
 assert vote1.status_code == 200
 assert vote2.status_code == 200
 assert vote3.status_code == 200
@@ -156,7 +164,7 @@ response_get_ingame = client.get(
     headers=p2
 )
 
-for player in range(0,5):
+for player in range(0, 5):
     response = client.get(
         "pytherin/cards",
         headers=players[player]
@@ -164,17 +172,16 @@ for player in range(0,5):
     print(response.json())
 
 
-
-for player in range(0,5):
+for player in range(0, 5):
     response = client.put(
         "pytherin/discard",
-        json= {"card_index" : 0},
+        json={"card_index": 0},
         headers=players[player]
     )
     print(response.json())
 
 
-for player in range(0,5):
+for player in range(0, 5):
     response = client.get(
         "pytherin/cards",
         headers=players[player]
@@ -182,10 +189,10 @@ for player in range(0,5):
     print(response.json())
 
 
-for player in range(0,5):
+for player in range(0, 5):
     response = client.put(
         "pytherin/discard",
-        json= {"card_index" : 0},
+        json={"card_index": 0},
         headers=players[player]
     )
     print(response.json())

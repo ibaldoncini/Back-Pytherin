@@ -227,7 +227,8 @@ async def vote(
         )):
     """ 
     This endpoint registers a vote and who`s voting.
-    Throws 409 if the game is not in "voting phase"
+    Throws 409 if the game if you already voted
+    Throws 405 if the game is not in phase of voting
     Throws 400 if the vote is not Lumos or Nox
     """
 
@@ -238,7 +239,7 @@ async def vote(
 
         if vote_req.vote not in [Vote.LUMOS.value, Vote.NOX.value]:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="Invalid vote")
+                status_code=status.HTTP_400_CONFLICT, detail="Invalid vote")
         elif email in game.get_votes().keys():
             raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                                 detail="You already voted")
