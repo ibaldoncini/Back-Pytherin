@@ -153,7 +153,22 @@ async def get_game_state(
         # show results TO DO
         game = room.get_game()
         winner = game.get_phase()
-        return {"room_status": room.status, "message": f"Game has finished, {winner.name}"}
+        json_r = {
+            "room_status": room.status,
+            "my_role": my_role,
+            "death_eaters": de_list,
+            "voldemort": voldemort,
+            "minister": game.get_minister_user(),
+            "director": game.get_director_user(),
+            "last_minister": game.get_last_minister_user(),
+            "last_director": game.get_last_director_user(),
+            "de_procs": game.get_de_procs(),
+            "fo_procs": game.get_fo_procs(),
+            "phase": game.get_phase(),
+            "player_list": game.get_current_players(),
+            "votes": votes_to_json(game.get_votes())
+        }
+        return json_r
 
 
 @router.put("/{room_name}/start", tags=["Game"], status_code=status.HTTP_201_CREATED)
