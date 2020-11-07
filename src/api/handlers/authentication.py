@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
-from api.models.users.user import Token, TokenData
+from api.models.users.user import Token
 
 
 """
@@ -44,7 +44,6 @@ def valid_credentials(token: str = Depends(oauth2_scheme)):
         email: str = payload.get("email")
         if email is None:
             return None
-        token_data = TokenData(email=email)
     except JWTError:
         return None
     return email

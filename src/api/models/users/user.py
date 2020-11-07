@@ -29,9 +29,7 @@ class Token(BaseModel):
     token_type: str
 
 
-class TokenData(BaseModel):
-    '''
-    Optional model, it serves for containing the email
-    in the token once decrypted
-    '''
-    email: Optional[str] = None
+class NewPassword(BaseModel):
+    old_pwd: str
+    new_pwd: str = Field(..., min_length=8, max_length=54,
+                         regex="^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,32}$")

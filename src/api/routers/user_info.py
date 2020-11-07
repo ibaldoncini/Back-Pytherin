@@ -1,56 +1,48 @@
 # users.py
 from fastapi import APIRouter, Depends, HTTPException, status
-from pony.orm import db_session
+from pony.orm import db_session, commit
 
-from api.models.base import db
-from api.models.users.user import User
-from api.utils.login import *
+from api.models.base import db, DB_User
+from api.models.users.user import User, NewPassword
+from api.utils.login import get_current_user
 from api.handlers.authentication import *
+from api.handlers.pass_handler import verify_password, get_password_hash
 
 
 router = APIRouter()
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    email = valid_credentials(token)
-    if email is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Could not validate credentials",
-                            headers={"WWW-Authenticate": "Bearer"},
-                            )
-    keys = ('username', 'email', 'hashed_password',
-            'email_confirmed', 'icon', 'creation_date')
-    with db_session:
-        try:
-            user_tuple = db.get(
-                "select * from DB_User where email = $email")
-        except:
-            raise HTTPException(
-                status_code=400, detail="Incorrect email or password")
-        user = dict(zip(keys, user_tuple))
-    if user is None:
-        raise credentials_excpetion
-    return user
+@router.put("/users/change_password", status_code=200, tags=["Users"])
+async def change_psw(new_password_request: NewPassword, user: User = Depends(get_current_user)):
+    """
+    Endpoint that allows a User to change his password
+    It takes the old password and the new one, it checks that the 
+    new password satisfies the requirements.
+    Returns:
+    200 OK              message : You have changed your password succesfully,
+    401 UNAUTHORIZED    detail : Could not validate credentials,
+    401 UNAUTHORIZED    detail : Wrong old password,
+    422 BAD ENTITY      detail : The new password doesen't satisfies the requirements,
+    503 SERVICE UNAVAILABLE detail : Something went wrong on the database
+    """
 
+    if not verify_password(new_password_request.old_pwd, user['hashed_password']):
+        raise HTTPException(status_code=401, detail="Wrong old password")
 
-async def get_current_active_user(current_user: User = Depends(get_current_user)):
-    if not current_user['email_confirmed']:
-        raise HTTPException(status_code=400, detail="Unconfirmed user")
-    return current_user
-
-
-@router.get("/users/all", tags=["Users"], status_code=200)
-@db_session
-async def dump():
-    '''
-    Endpoint that show in console the actual state of the users database
-    '''
-    print(db.select("username,email,email_confirmed from DB_User")[:])
-    return ()
+    try:
+        new_hash = get_password_hash(new_password_request.new_pwd)
+        with db_session:
+            user = DB_User.get(email=user["email"])
+            user.set(hashed_password=new_hash)
+            commit()
+    except:
+        raise HTTPException(
+            status_code=503, detail="Service unavailable, try again soon")
+    return {"message": "You have changed your password succesfully"}
 
 
 @router.get("/users/me", status_code=200, tags=["Users"])
-async def read_users(current_user: User = Depends(get_current_active_user)):
+async def read_users(current_user: User = Depends(get_current_user)):
     '''
     API endpoint that serves for testing the token validation. Returns info about
     the user that logged in if validation went well
