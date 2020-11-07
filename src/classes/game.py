@@ -65,11 +65,30 @@ class Game:
         else:
             return (self.minister.get_user())
 
+    def change_minister(self):
+        """
+        Method that changes the current minister, it will be called at the
+        beggining of a new turn.
+        It changes the minister just assigning the role to the next player in
+        the list of players of the match.
+        """
+
+        self.last_minister = self.minister
+        last_minister_index = self.players.index(self.last_minister)
+        new_minister_index = (last_minister_index + 1) % self.n_of_players
+        self.minister = self.players[new_minister_index]
+
     def get_director_user(self):
         if self.director is None:
             return "Undefined"
         else:
             return (self.director.get_user())
+
+    def set_director(self, email):
+        if email is None:
+            self.director = None
+        else:
+            self.director = self.__get_player_by_email(email)
 
     def get_last_minister_user(self):
         if self.last_minister is None:
@@ -88,6 +107,16 @@ class Game:
 
     def get_fo_procs(self):
         return (self.board.get_fo_procs())
+
+    def get_cards(self):
+        return self.cards
+
+    def discard(self, index):
+        self.cards.pop(index)
+
+    def deal_cards(self):
+        new_cards = self.deck.take_3_cards()
+        self.cards = new_cards
 
     def get_current_players(self):
         """
@@ -120,6 +149,15 @@ class Game:
     def get_votes(self):
         return self.votes
 
+    def register_vote(self, vote, email):
+        self.votes[email] = vote
+
+    def get_phase(self):
+        return self.phase
+
+    def set_phase(self, phase: GamePhase):
+        self.phase = phase
+
     def compute_votes(self):
         votes = Counter(self.votes.values())
         lumos_count = votes['Lumos']
@@ -133,45 +171,18 @@ class Game:
 
         else:
             self.set_director(None)
-            self.votes.clear()
-            self.change_minister()
-            self.set_phase(GamePhase.PROPOSE_DIRECTOR)
-
-    def register_vote(self, vote, email):
-        self.votes[email] = vote
-
-    def change_minister(self):
-        """
-        Method that changes the current minister, it will be called at the
-        beggining of a new turn.
-        It changes the minister just assigning the role to the next player in
-        the list of players of the match.
-        """
-
-        self.last_minister = self.minister
-        last_minister_index = self.players.index(self.last_minister)
-        new_minister_index = (last_minister_index + 1) % self.n_of_players
-        self.minister = self.players[new_minister_index]
-
-    def set_director(self, email):
-        if email is None:
-            self.director = None
-        else:
-            self.director = self.__get_player_by_email(email)
-
-    def get_cards(self):
-        return self.cards
-
-    def discard(self, index):
-        self.cards.pop(index)
+            self.restart_turn()
 
     def proc_leftover_card(self):
         card = self.cards.pop(0)
         self.board.proclaim(card)
         self.deal_cards()
+        self.restart_turn()  # Will soon be removed to accomodate spell casting
+
+    def restart_turn(self):
         self.last_director = self.director
         self.director = None
-        self.votes = dict()
+        self.votes.clear()
         self.change_minister()
 
         if self.board.get_de_procs() >= 6:
@@ -180,13 +191,3 @@ class Game:
             self.set_phase(GamePhase.FO_WON)
         else:
             self.set_phase(GamePhase.PROPOSE_DIRECTOR)
-
-    def deal_cards(self):
-        new_cards = self.deck.take_3_cards()
-        self.cards = new_cards
-
-    def get_phase(self):
-        return self.phase
-
-    def set_phase(self, phase: GamePhase):
-        self.phase = phase
