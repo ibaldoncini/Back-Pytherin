@@ -195,7 +195,7 @@ class Game:
             self.set_phase(GamePhase.PROPOSE_DIRECTOR)
 
     def spell_check(self):
-        if (self.get_de_procs() >= 3 and self.spells[Spell.DIVINATION > 0]):
+        if (self.get_de_procs() == 3 and self.spells[Spell.DIVINATION] > 0):
             self.set_phase(GamePhase.CAST_DIVINATION)
         else:
             self.restart_turn()
