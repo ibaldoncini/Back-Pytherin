@@ -9,6 +9,7 @@ class GamePhase(Enum):
     VOTE_DIRECTOR = auto()  # 2
     MINISTER_DISCARD = auto()  # 3
     DIRECTOR_DISCARD = auto()  # 4
+    CAST_DIVINATION = 7
     DE_WON = auto()  # 5
     FO_WON = auto()  # 6
 
