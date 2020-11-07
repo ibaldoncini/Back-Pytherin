@@ -9,7 +9,7 @@ from classes.role_enum import Role
 from classes.loyalty_enum import Loyalty
 from classes.deck import Deck, Card
 from classes.game_status_enum import GamePhase
-from classes.spell import *
+from classes.spell import Spell
 
 
 class Vote(Enum):
@@ -31,7 +31,6 @@ class Game:
         self.phase: GamePhase = GamePhase.PROPOSE_DIRECTOR
         self.cards: List[Card] = self.deck.take_3_cards()
         self.votes: Dict[str, Vote] = dict()
-        self.spells: Dict[Spell, int] = get_spells(n_of_players)
 
     def init_players(self, users: List[str]):
         # Create empty players
@@ -195,14 +194,14 @@ class Game:
             self.set_phase(GamePhase.PROPOSE_DIRECTOR)
 
     def spell_check(self):
-        if (self.get_de_procs() == 3 and self.spells[Spell.DIVINATION] > 0):
+        spell = self.board.unlock_spell()
+        if (spell == Spell.DIVINATION):
             self.set_phase(GamePhase.CAST_DIVINATION)
         else:
             self.restart_turn()
 
     def divination(self):
         top_three = self.cards
-        self.spells[(Spell.DIVINATION)] -= 1
         self.restart_turn()
 
         return top_three
