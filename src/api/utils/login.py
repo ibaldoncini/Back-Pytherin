@@ -3,8 +3,8 @@ from fastapi import Depends, HTTPException, status
 from pony.orm import db_session, select, commit
 
 from api.models.base import db, DB_User
-from api.handlers.authentication import *
-from api.handlers.pass_handler import *
+from api.handlers.authentication import valid_credentials
+from api.handlers.pass_handler import verify_password
 
 
 @db_session
@@ -25,7 +25,7 @@ def authenticate_user(mail: str, password: str):
     return user
 
 
-async def get_current_user(email: str = Depends(valid_Fcredentials)):
+async def get_current_user(email: str = Depends(valid_credentials)):
     """
     Function that return a dict with all the users data from the database
     """
