@@ -90,6 +90,8 @@ def join_several_players (room,n):
     if count == n:
       break
     join(p,room)
+    count += 1
+
 
 def create_several_rooms (n):
   for i in range (n):
@@ -97,22 +99,23 @@ def create_several_rooms (n):
     room_name = "Pytherin" + str(i)
     create_room(room_name,max_p)
 
-
+#TODO test if the match still appearing even if it started
+#hint: that should not happen
 def main ():
   print(get_rooms())
-  n_rooms = 5
-  create_several_rooms(n_rooms)
+  N_ROOMS = 5
+  create_several_rooms(N_ROOMS)
   rooms = get_rooms()
   print("Rooms: " + rooms.__str__())
-  for room in rooms:
-    print("Room: " + room.__str__() + "\n")
-    #room_names = list(map(lambda r : rooms.get("name"),room))
-    #print(room_names)
-  '''
-  for i in range (0,n_rooms):
+  real_rooms = rooms.get("message")
+  room_names = []
+  for room in real_rooms:
+    room_names.append(room.get("name"))
+  
+  for i in range (0,N_ROOMS):
     n_players = randint(1,4)
     join_several_players(room_names[i],n_players)
-  '''
 
+  print("Rooms with people " + get_rooms().__str__())
 
 main()

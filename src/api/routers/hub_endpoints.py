@@ -21,4 +21,4 @@ def get_rooms ():
     ret_json.append(aux)
 
   #return {"message" : ret_json.__str__()}
-  return {"message" : ret_json.__str__()}
+  return {"message" : ret_json}
