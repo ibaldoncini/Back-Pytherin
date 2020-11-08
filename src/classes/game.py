@@ -9,6 +9,7 @@ from classes.role_enum import Role
 from classes.loyalty_enum import Loyalty
 from classes.deck import Deck, Card
 from classes.game_status_enum import GamePhase
+from classes.spell import Spell
 
 
 class Vote(Enum):
@@ -177,7 +178,7 @@ class Game:
         card = self.cards.pop(0)
         self.board.proclaim(card)
         self.deal_cards()
-        self.restart_turn()  # Will soon be removed to accomodate spell casting
+        self.spell_check()
 
     def restart_turn(self):
         self.last_director = self.director
@@ -191,3 +192,16 @@ class Game:
             self.set_phase(GamePhase.FO_WON)
         else:
             self.set_phase(GamePhase.PROPOSE_DIRECTOR)
+
+    def spell_check(self):
+        spell = self.board.unlock_spell()
+        if (spell == Spell.DIVINATION):
+            self.set_phase(GamePhase.CAST_DIVINATION)
+        else:
+            self.restart_turn()
+
+    def divination(self):
+        top_three = self.cards
+        self.restart_turn()
+
+        return top_three
