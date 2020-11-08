@@ -114,16 +114,16 @@ async def get_game_state(
     Or it will return the winner if the game is over
     """
     room = hub.get_room_by_name(room_name)
-
     if not email in room.get_user_list():
         raise HTTPException(status_code=403, detail="You're not in this room")
     elif room.status == RoomStatus.PREGAME:
         return {"room_status": room.status, "users": room.users, "owner": room.owner}
-    elif room.status == RoomStatus.IN_GAME:
+    else:
+        room.update_status()
         game = room.get_game()
-
         my_role = game.get_player_role(email)
-        if (my_role == Role.DEATH_EATER or my_role == Role.VOLDEMORT):
+
+        if (my_role == Role.DEATH_EATER or my_role == Role.VOLDEMORT or room.status == RoomStatus.FINISHED):
             de_list = game.get_de_list()
             voldemort = game.get_voldemort()
             # In next sprints, we need to check who is voldemort
@@ -131,35 +131,6 @@ async def get_game_state(
         else:
             de_list = []
             voldemort = ""
-
-        json_r = {
-            "room_status": room.status,
-            "my_role": my_role,
-            "death_eaters": de_list,
-            "voldemort": voldemort,
-            "minister": game.get_minister_user(),
-            "director": game.get_director_user(),
-            "last_minister": game.get_last_minister_user(),
-            "last_director": game.get_last_director_user(),
-            "de_procs": game.get_de_procs(),
-            "fo_procs": game.get_fo_procs(),
-            "phase": game.get_phase(),
-            "player_list": game.get_current_players(),
-            "votes": votes_to_json(game.get_votes())
-        }
-        return json_r
-    elif room.status == RoomStatus.FINISHED:
-        # show results TO DO
-
-        game = room.get_game()
-        winner = game.get_phase()
-
-        game = room.get_game()
-
-        my_role = game.get_player_role(email)
-
-        de_list = game.get_de_list()
-        voldemort = game.get_voldemort()
 
         json_r = {
             "room_status": room.status,
@@ -275,7 +246,6 @@ async def vote(
 
     if len(game.get_current_players()) == len(game.votes):
         game.compute_votes()
-        room.update_status()
 
     return {"message": "Succesfully voted!"}
 
@@ -346,7 +316,6 @@ async def discard(body: DiscardRequest,
 
         game.discard(body.card_index)
         game.proc_leftover_card()
-        room.update_status()
         return {"message": "Successfully discarded"}
 
     else:
