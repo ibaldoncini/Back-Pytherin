@@ -106,7 +106,7 @@ async def get_game_state(
             "last_director": the previous director,
             "de_procs": DeathEater proclamations,
             "fo_procs": FenixOrder proclamations,
-            "phase": the phase the game is in propose director, vote, 
+            "phase": the phase the game is in propose director, vote,
                      minister discard ,director discard, (1,2,3,4) respectively,
             "player_list": the players in the game,
             "votes": the player votes for this turn.
@@ -219,7 +219,7 @@ async def vote(
             min_length=6,
             max_length=20,
         )):
-    """ 
+    """
     This endpoint registers a vote and who`s voting.
     Throws 409 if the game if you already voted
     Throws 405 if the game is not in phase of voting
@@ -263,7 +263,8 @@ async def get_cards(
     Endpoint for getting the cards, used both by minister and director, but at their respective times.
     Will return a list similar to this:
 
-    ['Order of the Fenix proclamation', 'Order of the Fenix proclamation', 'Death Eater proclamation']
+    ['Order of the Fenix proclamation',
+        'Order of the Fenix proclamation', 'Death Eater proclamation']
     """
     room = check_game_preconditions(email, room_name, hub)
 
@@ -318,6 +319,22 @@ async def discard(body: DiscardRequest,
         game.proc_leftover_card()
         return {"message": "Successfully discarded"}
 
+    else:
+        raise HTTPException(
+            detail="You're not allowed to do this", status_code=405)
+
+
+@router.get("/{room_name}/cast/divination", tags=["Game"], status_code=status.HTTP_200_OK)
+async def cast_divination(room_name: str = Path(..., min_length=6, max_length=20),
+                          email: str = Depends(valid_credentials)):
+
+    room = check_game_preconditions(email, room_name, hub)
+
+    game = room.get_game()
+    phase = game.get_phase()
+    minister = game.get_minister_user()
+    if (phase == GamePhase.CAST_DIVINATION and email == minister):
+        return {"cards": game.divination()}
     else:
         raise HTTPException(
             detail="You're not allowed to do this", status_code=405)
