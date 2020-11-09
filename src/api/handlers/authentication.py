@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
-from api.models.users.user import Token
+from api.models.user_models import Token
 
 
 """
