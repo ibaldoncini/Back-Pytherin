@@ -33,3 +33,7 @@ class NewPassword(BaseModel):
     old_pwd: str
     new_pwd: str = Field(..., min_length=8, max_length=54,
                          regex="^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,32}$")
+
+
+class NewUsername(BaseModel):
+    username: str = Field(..., min_length=3, max_length=15)
