@@ -9,6 +9,7 @@ from classes.role_enum import Role
 from classes.loyalty_enum import Loyalty
 from classes.deck import Deck, Card
 from classes.game_status_enum import GamePhase
+from classes.spell import Spell
 
 
 class Vote(Enum):
@@ -128,9 +129,14 @@ class Game:
             unames.append(player.get_user())
         return unames
 
+    def get_alive_players(self):
+        all_players = self.players
+        alive_players = filter(lambda p: p.is_player_alive(), all_players)
+        return list(map(lambda p: p.get_user(), alive_players))
+
     def __get_player_by_email(self, email: str):
-        filtered = filter(lambda p: p.get_user() == email, self.players)
-        return (list(filtered)[0])
+        player = next(p for p in self.players if p.get_user() == email)
+        return player
 
     def get_player_role(self, email: str):
         return self.__get_player_by_email(email).get_role()
@@ -142,9 +148,8 @@ class Game:
         return list(map(lambda p: p.get_user(), filtered))
 
     def get_voldemort(self):
-        filtered = filter(lambda p:  p.get_role() ==
-                          Role.VOLDEMORT, self.players)
-        return (list(filtered)[0].get_user())
+        voldemort = next(p for p in self.players if p.is_voldemort())
+        return voldemort.get_user()
 
     def get_votes(self):
         return self.votes
@@ -177,17 +182,39 @@ class Game:
         card = self.cards.pop(0)
         self.board.proclaim(card)
         self.deal_cards()
-        self.restart_turn()  # Will soon be removed to accomodate spell casting
+        self.executive_phase()
 
     def restart_turn(self):
         self.last_director = self.director
         self.director = None
         self.votes.clear()
         self.change_minister()
+        voldemort = next(p for p in self.players if p.is_voldemort())
 
         if self.board.get_de_procs() >= 6:
             self.set_phase(GamePhase.DE_WON)
-        elif self.board.get_fo_procs() >= 5:
+        elif (self.board.get_fo_procs() >= 5 or not voldemort.is_player_alive()):
             self.set_phase(GamePhase.FO_WON)
         else:
             self.set_phase(GamePhase.PROPOSE_DIRECTOR)
+
+    def executive_phase(self):
+        spell = self.board.spell_check()
+        if (spell == Spell.DIVINATION):
+            self.set_phase(GamePhase.CAST_DIVINATION)
+        elif (spell == Spell.AVADA_KEDAVRA):
+            self.set_phase(GamePhase.CAST_AVADA_KEDAVRA)
+        else:
+            self.restart_turn()
+
+    def divination(self):
+        top_three = self.cards
+        self.restart_turn()
+
+        return top_three
+
+    def avada_kedavra(self, target):
+        for player in self.players:
+            if target == player.get_user():
+                player.kill()
+        self.restart_turn()
