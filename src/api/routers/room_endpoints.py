@@ -323,8 +323,8 @@ async def discard(body: DiscardRequest,
             detail="You're not allowed to do this", status_code=405)
 
 
-@router.put("/{room_name}/cast/avara-kedavra", tags=["Game"], status_code=status.HTTP_200_OK)
-async def cast_avara_kedavra(body: TargetedSpellRequest,
+@router.put("/{room_name}/cast/avada-kedavra", tags=["Game"], status_code=status.HTTP_200_OK)
+async def cast_avada_kedavra(body: TargetedSpellRequest,
                              room_name: str = Path(...,
                                                    min_length=6, max_length=20),
                              email: str = Depends(valid_credentials)):
@@ -334,15 +334,15 @@ async def cast_avara_kedavra(body: TargetedSpellRequest,
     game = room.get_game()
     phase = game.get_phase()
     minister = game.get_minister_user()
-    if (phase == GamePhase.CAST_AVARA_KEDAVRA and email == minister):
+    if (phase == GamePhase.CAST_AVADA_KEDAVRA and email == minister):
         if body.target_email not in game.get_current_players():
             raise HTTPException(detail="Player not found", status_code=404)
         elif body.target_email not in game.get_alive_players():
             raise HTTPException(
                 detail="Player is already dead", status_code=409)
         else:
-            game.avara_kedavra(body.target_email)
-            return {"message": "Successfully casted Avara Kedavra"}
+            game.avada_kedavra(body.target_email)
+            return {"message": "Successfully casted Avada Kedavra"}
     else:
         raise HTTPException(
             detail="You're not allowed to do this", status_code=405)

@@ -203,7 +203,7 @@ class Game:
         if (spell == Spell.DIVINATION):
             self.set_phase(GamePhase.CAST_DIVINATION)
         elif (spell == Spell.AVADA_KEDAVRA):
-            self.set_phase(GamePhase.CAST_AVARA_KEDAVRA)
+            self.set_phase(GamePhase.CAST_AVADA_KEDAVRA)
         else:
             self.restart_turn()
 
@@ -213,7 +213,7 @@ class Game:
 
         return top_three
 
-    def avara_kedavra(self, target):
+    def avada_kedavra(self, target):
         for player in self.players:
             if target == player.get_user():
                 player.kill()
