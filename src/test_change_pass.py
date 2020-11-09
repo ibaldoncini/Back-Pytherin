@@ -44,12 +44,12 @@ def register_and_login(email: str):
     return {"accept": "application/json", "Authorization": head}
 
 
-p0 = register_and_login("person0@email.com")
-p1 = register_and_login("person1@email.com")
-p2 = register_and_login("person2@email.com")
+p0 = register_and_login("person0@noreply.com")
+p1 = register_and_login("person1@noreply.com")
+p2 = register_and_login("person2@noreply.com")
 
 
-def change_password():  # happy path
+def test_change_password():  # happy path
     response = client.put(
         "/users/change_password",
         headers=p0,
@@ -57,16 +57,14 @@ def change_password():  # happy path
               "new_pwd": "Refrigerador65"}
     )
     assert response.status_code == 200
-    assert response.json == {
-        "message": "You have changed your password succesfully"}
 
 
-def relogin_with_new_pass():
+def test_relogin_with_new_pass():
     response = client.post(
         "/users",
         data={
             "grant_type": "",
-            "username": "person0@email.com",
+            "username": "person0@noreply.com",
             "password": "Refrigerador65",
             "scope": "",
             "client_id": "",
@@ -76,7 +74,7 @@ def relogin_with_new_pass():
     assert response.status_code == 200
 
 
-def wrong_psw():
+def test_wrong_psw():
     response = client.put(
         "/users/change_password",
         headers=p1,
@@ -86,7 +84,7 @@ def wrong_psw():
     assert response.status_code == 401
 
 
-def invalid_new_psw1():
+def test_invalid_new_psw1():
     response = client.put(
         "/users/change_password",
         headers=p2,
@@ -96,7 +94,7 @@ def invalid_new_psw1():
     assert response.status_code == 422
 
 
-def invalid_new_psw2():
+def test_invalid_new_psw2():
     response = client.put(
         "/users/change_password",
         headers=p2,
@@ -106,11 +104,11 @@ def invalid_new_psw2():
     assert response.status_code == 422
 
 
-def invalid_new_psw3():
+def test_invalid_new_psw3():
     response = client.put(
         "/users/change_password",
         headers=p2,
         json={"old_pwd": "Heladera65",
-              "new_pwd": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}
+              "new_pwd": "7aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}
     )
     assert response.status_code == 422
