@@ -44,9 +44,14 @@ class Board:
         else:
             self.de_proclaims += 1
 
-    def unlock_spell(self):
-        if (self.get_de_procs() == 3 and self.spells[Spell.DIVINATION] > 0):
+    def spell_check(self):
+        de_procs = self.get_de_procs()
+        if (de_procs == 3 and self.spells[Spell.DIVINATION] > 0):
             self.spells[Spell.DIVINATION] -= 1
             return Spell.DIVINATION
+        elif ((de_procs == 4 and self.spells[Spell.AVADA_KEDAVRA] > 1)
+                or (de_procs == 5 and self.spells[Spell.AVADA_KEDAVRA] > 0)):
+            self.spells[Spell.AVADA_KEDAVRA] -= 1
+            return Spell.AVADA_KEDAVRA
         else:
             return None

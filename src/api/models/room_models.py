@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class RoomCreationRequest(BaseModel):
     """
     Body of the request used to create a new room,
@@ -11,14 +12,13 @@ class RoomCreationRequest(BaseModel):
         ..., ge=5, le=10, description="Max allowed players in the room")
 
 
-
 class VoteRequest(BaseModel):
     """
     Body of the request used to vote
     """
-    vote: str = Field(...,description="Vote = <lumos/nox>")
+    vote: str = Field(..., description="Vote = <lumos/nox>")
 
-      
+
 class DiscardRequest(BaseModel):
     """
     Body of the request used for discarding a card.
@@ -35,3 +35,11 @@ class ProposeDirectorRequest(BaseModel):
     """
     director_email: str = Field(...,
                                 description="The email of the user to be proposed as director")
+
+
+class TargetedSpellRequest(BaseModel):
+    """
+    Body of the request used for spells that are casted onto another player
+    """
+    target_email: str = Field(...,
+                              description="The email of the user to receive the spell")
