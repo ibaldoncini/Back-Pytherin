@@ -6,8 +6,8 @@ from pony.orm import db_session, commit
 
 
 from api.models.base import db, DB_User, Validation_Tuple
-from api.models.users.user import User, Token
-from api.utils.login import *
+from api.models.user_models import User, Token
+from api.utils.login import authenticate_user
 from api.handlers.pass_handler import *
 from api.handlers.authentication import *
 from api.handlers.param_check import *

@@ -11,7 +11,7 @@ Delete the database before executing the test
 """
 
 
-def test_load_user1():
+def load_user1():
     response = client.post(
         "/users/register",
         json={
@@ -27,7 +27,7 @@ def test_load_user1():
     }
 
 
-def test_load_user2():
+def load_user2():
     response = client.post(
         "/users/register",
         json={
@@ -43,7 +43,7 @@ def test_load_user2():
     }
 
 
-def test_load_user3():
+def load_user3():
     response = client.post(
         "/users/register",
         json={
@@ -57,6 +57,11 @@ def test_load_user3():
     assert response.json() == {
         "message": "test3, a verification email has been sent to test3@mail.com"
     }
+
+
+load_user1()
+load_user2()
+load_user3()
 
 
 def test_login_user_valid():
@@ -109,7 +114,8 @@ def test_login_user_wrong_pass():
 def test_invalid_token_user():
     response = client.get(
         "/users/me",
-        headers={"accept": "application/json", "Authorization": "Bearer a.bad.token"},
+        headers={"accept": "application/json",
+                 "Authorization": "Bearer a.bad.token"},
     )
     assert response.status_code == 401
 

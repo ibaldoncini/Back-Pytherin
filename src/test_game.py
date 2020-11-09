@@ -39,8 +39,6 @@ def create_and_login(email: str):
         except:
             pass
 
-    print(email + " " + head)
-
     return {"accept": "application/json", "Authorization": head}
 
 
