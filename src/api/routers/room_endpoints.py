@@ -41,7 +41,7 @@ async def create_room(
         raise HTTPException(status_code=409, detail="Room name already in use")
     else:
         new_room = Room(room_name, max_players, email)
-        save_game_on_database(new_room)
+        await save_game_on_database(new_room)
         hub.add_room(new_room)
         return {"message": "Room created successfully"}
 

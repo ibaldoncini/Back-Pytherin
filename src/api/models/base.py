@@ -31,7 +31,7 @@ def define_database_and_entities(**db_params):
         name = PrimaryKey(str)
         max_players = Required(int)
         owner = Required(str)
-        status = Required(int)
+        status = Required(str)
         users = Required(Json)
         game = Required(Json)
 
@@ -55,7 +55,7 @@ def load_from_database():
 
 async def save_game_on_database(room: Room):
     json_r = room.dump_game_json()
-    room_name = Room.get_name()
+    room_name = room.get_name()
     try:
         with db_session:
             if (db.exists("select * from DB_Room where name = $room_name")):
@@ -63,14 +63,15 @@ async def save_game_on_database(room: Room):
                 if(room.get_status() == RoomStatus.IN_GAME):
                     db.room.set(game=json_r)
                 elif (room.get_status() == RoomStatus.PREGAME):
-                    db_room.set(status=room.get_status())
+                    # db_room.set(status=room.get_status())
                     db_room.set(users=room.get_user_list())
                     db_room.set(game=json_r)
             else:
                 db.DB_Room(
                     name=room.get_name(),
                     max_players=room.get_max_players(),
-                    owner=room.get_owner,
+                    owner=room.get_owner(),
+                    status="PREGAME",  # MEJORAR
                     users={},
                     game={}
                 )

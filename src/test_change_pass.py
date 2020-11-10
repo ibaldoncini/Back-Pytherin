@@ -1,58 +1,15 @@
 # login_change_password.py
 from fastapi.testclient import TestClient
-from pony.orm import db_session, commit
-from api.models.base import DB_User
-from main import app
+from test_main import test_app
+from test_setUp import p
+
+client = TestClient(test_app)
 
 
-client = TestClient(app)
-
-
-def register_and_login(email: str):
-    client.post(
-        "/users/register",
-        json={
-            "username": email.split('@')[0],
-            "email": email,
-            "password": "Heladera65",
-            "icon": "string",
-        })
-    response_login = client.post(
-        "/users",
-        data={
-            "grant_type": "",
-            "username": email,
-            "password": "Heladera65",
-            "scope": "",
-            "client_id": "",
-            "client_secret": "",
-        },
-    )
-    assert response_login.status_code == 200
-    rta: dict = response_login.json()
-    token: str = rta["access_token"]
-    token_type: str = "Bearer "
-    head: str = token_type + token
-    with db_session:
-        try:
-            user = DB_User.get(email=email)
-            user.set(email_confirmed=True)
-            commit()
-        except:
-            pass
-
-    return {"accept": "application/json", "Authorization": head}
-
-
-p0 = register_and_login("person0@noreply.com")
-p1 = register_and_login("person1@noreply.com")
-p2 = register_and_login("person2@noreply.com")
-
-
-def test_change_password():  # happy path
+def test_change_password1():  # htest_appy path
     response = client.put(
         "/users/change_password",
-        headers=p0,
+        headers=p[0],
         json={"old_pwd": "Heladera65",
               "new_pwd": "Refrigerador65"}
     )
@@ -64,7 +21,7 @@ def test_relogin_with_new_pass():
         "/users",
         data={
             "grant_type": "",
-            "username": "person0@noreply.com",
+            "username": "player0@example.com",
             "password": "Refrigerador65",
             "scope": "",
             "client_id": "",
@@ -74,10 +31,20 @@ def test_relogin_with_new_pass():
     assert response.status_code == 200
 
 
+def test_change_password2():  # htest_appy path
+    response = client.put(
+        "/users/change_password",
+        headers=p[0],
+        json={"old_pwd": "Refrigerador65",
+              "new_pwd": "Heladera65"}
+    )
+    assert response.status_code == 200
+
+
 def test_wrong_psw():
     response = client.put(
         "/users/change_password",
-        headers=p1,
+        headers=p[1],
         json={"old_pwd": "ASDaSD77",
               "new_pwd": "Refrigerador65"}
     )
@@ -87,7 +54,7 @@ def test_wrong_psw():
 def test_invalid_new_psw1():
     response = client.put(
         "/users/change_password",
-        headers=p2,
+        headers=p[2],
         json={"old_pwd": "Heladera65",
               "new_pwd": "heladera"}
     )
@@ -97,7 +64,7 @@ def test_invalid_new_psw1():
 def test_invalid_new_psw2():
     response = client.put(
         "/users/change_password",
-        headers=p2,
+        headers=p[2],
         json={"old_pwd": "Heladera65",
               "new_pwd": "Helado"}
     )
@@ -107,7 +74,7 @@ def test_invalid_new_psw2():
 def test_invalid_new_psw3():
     response = client.put(
         "/users/change_password",
-        headers=p2,
+        headers=p[2],
         json={"old_pwd": "Heladera65",
               "new_pwd": "7aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}
     )

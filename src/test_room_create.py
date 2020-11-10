@@ -1,13 +1,10 @@
 
-"""
-Always erase database before running this test
-"""
 from fastapi.testclient import TestClient
-from main import app
+from test_main import test_app
 from pony.orm import db_session, commit
-from api.models.base import DB_User
+from api.models.base import db
 
-client = TestClient(app)
+client = TestClient(test_app)
 
 
 client.post(
@@ -52,7 +49,7 @@ def test_no_login():
 def test_unconfirmed_mail():
     response = client.post(
         "/room/new",
-        headers={"accept": "application/json",
+        headers={"accept": "test_application/json",
                  "Authorization": head
                  },
         json={"name": "foobar", "max_players": "5"}
@@ -66,7 +63,7 @@ def test_unconfirmed_mail():
 def test_bad_json():
     with db_session:
         try:
-            user = DB_User.get(email="test@test.com")
+            user = db.DB_User.get(email="test@test.com")
             user.set(email_confirmed=True)
             commit()
         except:
@@ -74,7 +71,7 @@ def test_bad_json():
 
     response1 = client.post(
         "/room/new",
-        headers={"accept": "application/json",
+        headers={"accept": "test_application/json",
                  "Authorization": head
                  },
         json={"name": "foobar"}
@@ -82,7 +79,7 @@ def test_bad_json():
 
     response2 = client.post(
         "/room/new",
-        headers={"accept": "application/json",
+        headers={"accept": "test_application/json",
                  "Authorization": head
                  },
         json={"name": "foobar", "max_players": "4"}
@@ -90,7 +87,7 @@ def test_bad_json():
 
     response3 = client.post(
         "/room/new",
-        headers={"accept": "application/json",
+        headers={"accept": "test_application/json",
                  "Authorization": head
                  },
         json={"name": "foo", "max_players": "5"}
@@ -101,11 +98,11 @@ def test_bad_json():
     assert response3.status_code == 422
 
 
-# test login and mail good arguments (happy path)
-def test_happy_path():
+# test login and mail good arguments (htest_appy path)
+def test_htest_appy_path():
     response = client.post(
         "/room/new",
-        headers={"accept": "application/json",
+        headers={"accept": "test_application/json",
                  "Authorization": head
                  },
         json={"name": "foobar", "max_players": "5"}
@@ -119,7 +116,7 @@ def test_happy_path():
 def test_used_name():
     response = client.post(
         "/room/new",
-        headers={"accept": "application/json",
+        headers={"accept": "test_application/json",
                  "Authorization": head
                  },
         json={"name": "foobar", "max_players": "6"}

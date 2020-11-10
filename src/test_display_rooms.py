@@ -1,20 +1,21 @@
 from os import name
-from fastapi.applications import FastAPI
+from fastapi.test_applications import FastAPI
 from pony.orm.core import get
 from api.routers.hub_endpoints import get_rooms
 from api.routers.room_endpoints import *
 from fastapi.testclient import TestClient
-from main import app
+from test_main import test_app
 from pony.orm import db_session, commit
-from api.models.base import DB_User
+from api.models.base import db
 from random import randint
 from classes.room import Room
 
-#from test_room_create import test_happy_path
+#from test_room_create import test_htest_appy_path
 
 
-client = TestClient(app)
+client = TestClient(test_app)
 head = ""
+
 
 def create_and_login(email: str):
     client.post(
@@ -43,7 +44,7 @@ def create_and_login(email: str):
     head: str = token_type + token
     with db_session:
         try:
-            user = DB_User.get(email=email)
+            user = db.DB_User.get(email=email)
             user.set(email_confirmed=True)
             commit()
         except:
@@ -51,7 +52,7 @@ def create_and_login(email: str):
 
     print(email + " " + head)
 
-    return {"accept": "application/json", "Authorization": head}
+    return {"accept": "test_application/json", "Authorization": head}
 
 
 def join(header, room_name: str):
@@ -68,54 +69,58 @@ p3 = create_and_login("player3@email.com")
 p4 = create_and_login("player4@email.com")
 
 
-def create_room(name,max_players):
-  print(head)
-  response = client.post(
-      "/room/new",
-      headers=owner,
-      json={"name": name, "max_players": max_players}
-  )
-  #assert response.status_code == 201
-  #assert response.json() == {
-   #   "message": "Room created successfully"}
-
-players = [owner,p1,p2,p3,p4]
+def create_room(name, max_players):
+    print(head)
+    response = client.post(
+        "/room/new",
+        headers=owner,
+        json={"name": name, "max_players": max_players}
+    )
+    #assert response.status_code == 201
+    # assert response.json() == {
+    #   "message": "Room created successfully"}
 
 
-def join_several_players (room,n):
-  if n > len(players):
-    return
-  count = 0
-  for p in players:
-    if count == n:
-      break
-    join(p,room)
-    count += 1
+players = [owner, p1, p2, p3, p4]
 
 
-def create_several_rooms (n):
-  for i in range (n):
-    max_p = randint(5,10)
-    room_name = "Pytherin" + str(i)
-    create_room(room_name,max_p)
+def join_several_players(room, n):
+    if n > len(players):
+        return
+    count = 0
+    for p in players:
+        if count == n:
+            break
+        join(p, room)
+        count += 1
 
-#TODO test if the match still appearing even if it started
-#hint: that should not happen
-def main ():
-  print(get_rooms())
-  N_ROOMS = 5
-  create_several_rooms(N_ROOMS)
-  rooms = get_rooms()
-  print("Rooms: " + rooms.__str__())
-  real_rooms = rooms.get("message")
-  room_names = []
-  for room in real_rooms:
-    room_names.append(room.get("name"))
-  
-  for i in range (0,N_ROOMS):
-    n_players = randint(1,4)
-    join_several_players(room_names[i],n_players)
 
-  print("Rooms with people " + get_rooms().__str__())
+def create_several_rooms(n):
+    for i in range(n):
+        max_p = randint(5, 10)
+        room_name = "Pytherin" + str(i)
+        create_room(room_name, max_p)
+
+# TODO test if the match still test_appearing even if it started
+# hint: that should not htest_appen
+
+
+def main():
+    print(get_rooms())
+    N_ROOMS = 5
+    create_several_rooms(N_ROOMS)
+    rooms = get_rooms()
+    print("Rooms: " + rooms.__str__())
+    real_rooms = rooms.get("message")
+    room_names = []
+    for room in real_rooms:
+        room_names.test_append(room.get("name"))
+
+    for i in range(0, N_ROOMS):
+        n_players = randint(1, 4)
+        join_several_players(room_names[i], n_players)
+
+    print("Rooms with people " + get_rooms().__str__())
+
 
 main()

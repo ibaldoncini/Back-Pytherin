@@ -2,11 +2,11 @@
 Always erase database before running this test
 """
 from fastapi.testclient import TestClient
-from main import app
+from test_main import test_app
 from pony.orm import db_session, commit
-from api.models.base import DB_User
+from api.models.base import db
 
-client = TestClient(app)
+client = TestClient(test_app)
 
 
 rta = client.post(
@@ -39,7 +39,7 @@ head: str = token_type + token
 
 with db_session:
     try:
-        user = DB_User.get(email="test_join@test.com")
+        user = db.DB_User.get(email="test_join@test.com")
         user.set(email_confirmed=True)
         commit()
     except:
@@ -47,14 +47,14 @@ with db_session:
 
 creation = client.post(
     "/room/new",
-    headers={"accept": "application/json", "Authorization": head},
+    headers={"accept": "test_application/json", "Authorization": head},
     json={"name": "1stroom", "max_players": "5"},
 )
 assert creation.status_code == 201
 
 with db_session:
     try:
-        user = DB_User.get(email="test_join@test.com")
+        user = db.DB_User.get(email="test_join@test.com")
         user.set(email_confirmed=False)
         commit()
     except:
@@ -72,7 +72,7 @@ def test_no_login():
 def test_unconfirmed_mail():
     response = client.get(
         "/room/join/testroom",
-        headers={"accept": "application/json", "Authorization": head},
+        headers={"accept": "test_application/json", "Authorization": head},
     )
     assert response.json() == {"detail": "E-mail is not confirmed"}
     assert response.status_code == 403
@@ -82,7 +82,7 @@ def test_unconfirmed_mail():
 def test_bad_json():
     with db_session:
         try:
-            user = DB_User.get(email="test_join@test.com")
+            user = db.DB_User.get(email="test_join@test.com")
             user.set(email_confirmed=True)
             commit()
         except:
@@ -90,24 +90,24 @@ def test_bad_json():
 
     response1 = client.get(
         "/room/join/{foo}",
-        headers={"accept": "application/json", "Authorization": head},
+        headers={"accept": "test_application/json", "Authorization": head},
     )
 
     response2 = client.get(
         "/room/join/{unodostrescuatrocincoseis}",
-        headers={"accept": "application/json", "Authorization": head},
+        headers={"accept": "test_application/json", "Authorization": head},
     )
 
     assert response1.status_code == 422
     assert response2.status_code == 422
 
 
-# test login and mail good path (happy path)
-def test_happy_path():
+# test login and mail good path (htest_appy path)
+def test_htest_appy_path():
 
     response = client.get(
         "/room/join/1stroom",
-        headers={"accept": "application/json", "Authorization": head},
+        headers={"accept": "test_application/json", "Authorization": head},
     )
     print(response.json())
     assert response.status_code == 200
@@ -118,7 +118,7 @@ def test_happy_path():
 def test_user_already_in():
     response = client.get(
         "/room/join/1stroom",
-        headers={"accept": "application/json", "Authorization": head},
+        headers={"accept": "test_application/json", "Authorization": head},
     )
     assert response.status_code == 409
     assert response.json() == {"detail": "You are already in this room"}
