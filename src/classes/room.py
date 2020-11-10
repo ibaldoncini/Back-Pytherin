@@ -71,6 +71,9 @@ class Room:
         """User count getter"""
         return len(self.users)
 
+    def get_owner(self):
+        return self.owner
+
     def get_user_list(self):
         """User list getter"""
         return self.users
@@ -83,6 +86,12 @@ class Room:
     def get_game(self):
         return self.game
 
+    def get_status(self):
+        return self.status
+
+    def get_max_players(self):
+        return self.max_players
+
     def set_status(self, status: RoomStatus):
         self.status = status
 
@@ -91,3 +100,21 @@ class Room:
         phase = game.get_phase()
         if (phase in [GamePhase.FO_WON, GamePhase.DE_WON]):
             self.set_status(RoomStatus.FINISHED)
+
+    def dump_game_json(self):
+        game = self.get_game()
+        if self.get_game() is not None:
+            json_save = {"death_eaters": game.get_de_list(),
+                         "voldemort": game.get_voldemort(),
+                         "minister": game.get_minister_user(),
+                         "director": game.get_director_user(),
+                         "last_minister": game.get_last_minister_user(),
+                         "last_director": game.get_last_minister_user(),
+                         "de_procs": game.get_de_procs(),
+                         "fo_procs": game.get_fo_procs(),
+                         "player_list": game.get_alive_players(),
+                         "deck": game.get_deck(),
+                         "spells": game.get_board_spells()}
+        else:
+            json_save = {}
+        return json_save

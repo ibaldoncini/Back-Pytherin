@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pony.orm import db_session, commit
 
-from api.models.base import db, DB_User
+from api.models.base import db  # , DB_User
 from api.models.user_models import User, NewPassword, NewUsername
 from api.utils.login import get_current_user
 from api.handlers.authentication import valid_credentials
@@ -28,14 +28,16 @@ async def change_psw(new_password_request: NewPassword, user: User = Depends(get
 
     if not verify_password(new_password_request.old_pwd, user['hashed_password']):
         raise HTTPException(status_code=401, detail="Wrong old password")
-
+    email = user['email']
     try:
         new_hash = get_password_hash(new_password_request.new_pwd)
         with db_session:
-            user = DB_User.get(email=user["email"])
+            user = db.DB_User.get(email=email)
+            print(user)
             user.set(hashed_password=new_hash)
             commit()
-    except:
+    except Exception as e:
+        print(e)
         raise HTTPException(
             status_code=503, detail="Service unavailable, try again soon")
     return {"message": "You have changed your password succesfully"}
@@ -53,10 +55,10 @@ async def change_username(new_username: NewUsername, user: User = Depends(get_cu
     422 BAD ENTITY      detail : The new username doesen't satisfies the requirements,
     503 SERVICE UNAVAILABLE detail : Something went wrong on the database
     """
-
+    email = user['email']
     try:
         with db_session:
-            user = DB_User.get(email=user["email"])
+            user = db.DB_User.get(email=email)
             user.set(username=new_username.username)
             commit()
     except:

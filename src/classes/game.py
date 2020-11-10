@@ -112,6 +112,14 @@ class Game:
     def get_cards(self):
         return self.cards
 
+    def get_board_spells(self):
+        result = {key.value: value for key, value in self.board.spells.items()}
+        return result
+
+    def get_deck(self):
+        result = map(lambda c: c.value, self.cards)
+        return list(result)
+
     def discard(self, index):
         self.cards.pop(index)
 

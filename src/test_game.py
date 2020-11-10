@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 from pony.orm import db_session, commit
-from api.models.base import DB_User
+from api.models.base import db
 from main import app
 
 client = TestClient(app)
@@ -33,7 +33,7 @@ def create_and_login(email: str):
     head: str = token_type + token
     with db_session:
         try:
-            user = DB_User.get(email=email)
+            user = db.DB_User.get(email=email)
             user.set(email_confirmed=True)
             commit()
         except:

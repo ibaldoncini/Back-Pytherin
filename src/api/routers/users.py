@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from pony.orm import db_session, commit
 
 
-from api.models.base import db, DB_User, Validation_Tuple
+from api.models.base import db  # , DB_User, Validation_Tuple
 from api.models.user_models import User, Token
 from api.utils.login import authenticate_user
 from api.handlers.pass_handler import *
@@ -26,9 +26,9 @@ async def register(user: User):
       * email : EmailStr
       * password : str
     """
-    if check_username_not_in_database(user) and check_email_not_in_database(user):
+    if not check_username_not_in_database(user) and not check_email_not_in_database(user):
         with db_session:
-            DB_User(
+            db.DB_User(
                 username=user.username,
                 email=user.email,
                 hashed_password=get_password_hash(user.password),
@@ -48,11 +48,11 @@ async def register(user: User):
         }
     else:
         msg = ""
-        if not check_username_not_in_database(user):
+        if check_username_not_in_database(user):
             msg += "Username already registered "
             raise HTTPException(
                 status_code=409, detail="Username already registered ")
-        elif not check_email_not_in_database(user):
+        elif check_email_not_in_database(user):
             msg += "Email already registered"
             raise HTTPException(
                 status_code=409, detail="Email aready registered")
@@ -64,7 +64,7 @@ async def register(user: User):
 async def validate_user(email: str, code: str):
     try:
         with db_session:
-            user = DB_User.get(email=email)
+
             data = db.get(
                 "select email,code from Validation_Tuple where email=$email")
 
@@ -72,7 +72,7 @@ async def validate_user(email: str, code: str):
                 raise HTTPException(
                     status_code=409, detail="Invalid validation code")
 
-            user = DB_User.get(email=email)
+            user = db.DB_User.get(email=email)
             user.set(email_confirmed=True)
             commit()
 

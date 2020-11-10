@@ -9,7 +9,7 @@ from classes.room_hub import RoomHub
 from classes.role_enum import Role
 from classes.game_status_enum import GamePhase
 from classes.game import Vote
-from api.models.base import db, Room, save_game_on_database
+from api.models.base import db, save_game_on_database, dump_room  # , Room
 
 router = APIRouter()
 
@@ -41,6 +41,7 @@ async def create_room(
         raise HTTPException(status_code=409, detail="Room name already in use")
     else:
         new_room = Room(room_name, max_players, email)
+        save_game_on_database(new_room)
         hub.add_room(new_room)
         return {"message": "Room created successfully"}
 
@@ -77,6 +78,7 @@ async def join_room(
     elif not room.is_open():
         raise HTTPException(status_code=403, detail="Room is full or in-game")
     else:
+        await save_game_on_database(room)
         await room.user_join(email)
         return {"message": f"Joined {room_name}"}
 
@@ -209,8 +211,21 @@ async def start_game(
         raise HTTPException(
             status_code=409, detail="Not enough players")
     else:
+        await save_game_on_database(room)
         room.start_game()
         return {"message": "Succesfully started"}
+
+
+@router.get("/{room_name}/dump", tags=["Game"])
+async def dump(
+        room_name: str = Path(
+            ...,
+            min_length=6,
+            max_length=20,
+        ),
+        email: str = Depends(valid_credentials)):
+    room = hub.get_room_by_name(room_name)
+    return dump_room(room)
 
 
 @router.put("/{room_name}/director", tags=["Game"], status_code=status.HTTP_201_CREATED)
@@ -238,7 +253,9 @@ async def propose_director(body: ProposeDirectorRequest,
             raise HTTPException(
                 status_code=403, detail="That player cannot be the director this round")
         else:
-            # guardar el gamestate en el bd
+
+            await save_game_on_database(room)
+
             game.set_director(body.director_email)
             game.set_phase(GamePhase.VOTE_DIRECTOR)
             return {"message": "Director proposed successfully"}
@@ -248,7 +265,7 @@ async def propose_director(body: ProposeDirectorRequest,
             detail="You're not allowed to do this", status_code=405)
 
 
-@router.put("/{room_name}/vote", tags=["Game"], status_code=status.HTTP_200_OK)
+@ router.put("/{room_name}/vote", tags=["Game"], status_code=status.HTTP_200_OK)
 async def vote(
         vote_req: VoteRequest,
         email: str = Depends(valid_credentials),
@@ -288,7 +305,7 @@ async def vote(
     return {"message": "Succesfully voted!"}
 
 
-@router.get("/{room_name}/cards", tags=["Game"], status_code=status.HTTP_200_OK)
+@ router.get("/{room_name}/cards", tags=["Game"], status_code=status.HTTP_200_OK)
 async def get_cards(
     room_name: str = Path(
         ...,
@@ -320,7 +337,7 @@ async def get_cards(
             detail="You're not allowed to do this", status_code=405)
 
 
-@router.put("/{room_name}/discard", tags=["Game"], status_code=status.HTTP_201_CREATED)
+@ router.put("/{room_name}/discard", tags=["Game"], status_code=status.HTTP_201_CREATED)
 async def discard(body: DiscardRequest,
                   room_name: str = Path(
                       ...,
@@ -363,7 +380,7 @@ async def discard(body: DiscardRequest,
             detail="You're not allowed to do this", status_code=405)
 
 
-@router.get("/{room_name}/cast/divination", tags=["Game"], status_code=status.HTTP_200_OK)
+@ router.get("/{room_name}/cast/divination", tags=["Game"], status_code=status.HTTP_200_OK)
 async def cast_divination(room_name: str = Path(..., min_length=6, max_length=20),
                           email: str = Depends(valid_credentials)):
 
@@ -379,7 +396,7 @@ async def cast_divination(room_name: str = Path(..., min_length=6, max_length=20
             detail="You're not allowed to do this", status_code=405)
 
 
-@router.put("/{room_name}/cast/avada-kedavra", tags=["Game"], status_code=status.HTTP_200_OK)
+@ router.put("/{room_name}/cast/avada-kedavra", tags=["Game"], status_code=status.HTTP_200_OK)
 async def cast_avada_kedavra(body: TargetedSpellRequest,
                              room_name: str = Path(...,
                                                    min_length=6, max_length=20),
