@@ -9,6 +9,7 @@ from classes.room_hub import RoomHub
 from classes.role_enum import Role
 from classes.game_status_enum import GamePhase
 from classes.game import Vote
+from api.models.base import db, Room, save_game_on_database
 
 router = APIRouter()
 
@@ -237,6 +238,7 @@ async def propose_director(body: ProposeDirectorRequest,
             raise HTTPException(
                 status_code=403, detail="That player cannot be the director this round")
         else:
+            # guardar el gamestate en el bd
             game.set_director(body.director_email)
             game.set_phase(GamePhase.VOTE_DIRECTOR)
             return {"message": "Director proposed successfully"}
@@ -311,6 +313,7 @@ async def get_cards(
 
     if ((phase == GamePhase.MINISTER_DISCARD and minister == email) or
             (phase == GamePhase.DIRECTOR_DISCARD and director == email)):
+        #
         return {"cards": game.get_cards()}
     else:
         raise HTTPException(
