@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pony.orm import db_session, commit
 
 from api.models.base import db, DB_User
-from api.models.user_models import User, NewPassword
+from api.models.user_models import User, NewPassword, NewUsername
 from api.utils.login import get_current_user
 from api.handlers.authentication import valid_credentials
 from api.handlers.pass_handler import verify_password, get_password_hash
@@ -39,6 +39,30 @@ async def change_psw(new_password_request: NewPassword, user: User = Depends(get
         raise HTTPException(
             status_code=503, detail="Service unavailable, try again soon")
     return {"message": "You have changed your password succesfully"}
+
+
+@router.put("/users/change_username", status_code=200, tags=["Users"])
+async def change_username(new_username: NewUsername, user: User = Depends(get_current_user)):
+    """
+    Endpoint that allows a User to change his Username
+    It takes a new username, it checks that the 
+    new username satisfies the requirements.
+    Returns:
+    200 OK              message : You have changed your username succesfully,
+    401 UNAUTHORIZED    detail : Could not validate credentials,
+    422 BAD ENTITY      detail : The new username doesen't satisfies the requirements,
+    503 SERVICE UNAVAILABLE detail : Something went wrong on the database
+    """
+
+    try:
+        with db_session:
+            user = DB_User.get(email=user["email"])
+            user.set(username=new_username.username)
+            commit()
+    except:
+        raise HTTPException(
+            status_code=503, detail="Service unavailable, try again soon")
+    return {"message": "You have changed your username succesfully"}
 
 
 @router.get("/users/me", status_code=200, tags=["Users"])
