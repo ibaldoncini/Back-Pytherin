@@ -1,6 +1,3 @@
-from os import name
-from fastapi.applications import FastAPI
-from pony.orm.core import get
 from api.routers.hub_endpoints import get_rooms
 from api.routers.room_endpoints import *
 from fastapi.testclient import TestClient
@@ -9,6 +6,7 @@ from pony.orm import db_session, commit
 from api.models.base import DB_User
 from random import randint
 from classes.room import Room
+from api.routers.room_endpoints import hub
 
 #from test_room_create import test_happy_path
 
@@ -69,7 +67,6 @@ p4 = create_and_login("player4@email.com")
 
 
 def create_room(name,max_players):
-  print(head)
   response = client.post(
       "/room/new",
       headers=owner,
@@ -93,6 +90,11 @@ def join_several_players (room,n):
     count += 1
 
 
+def room_start (room_name):
+  room = hub.get_room_by_name(room_name)
+  room.status = RoomStatus.IN_GAME
+
+
 def create_several_rooms (n):
   for i in range (n):
     max_p = randint(5,10)
@@ -107,7 +109,7 @@ def main ():
   create_several_rooms(N_ROOMS)
   rooms = get_rooms()
   print("Rooms: " + rooms.__str__())
-  real_rooms = rooms.get("message")
+  real_rooms = rooms.get("room_list")
   room_names = []
   for room in real_rooms:
     room_names.append(room.get("name"))
@@ -117,5 +119,8 @@ def main ():
     join_several_players(room_names[i],n_players)
 
   print("Rooms with people " + get_rooms().__str__())
+
+  room_start(room_names[0])
+  print("\n\nStarted first room: " + get_rooms().__str__())
 
 main()

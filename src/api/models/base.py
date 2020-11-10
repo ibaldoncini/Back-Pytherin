@@ -20,7 +20,7 @@ class DB_User(db.Entity):
     creation_date = Required(date)
 
 
-class Room(db.Entity):
+class DB_Room(db.Entity):
     """
     Entity for the database, where we keep the status of the room
     and the game_state if begun.

@@ -9,7 +9,7 @@ from classes.room_hub import RoomHub
 from classes.role_enum import Role
 from classes.game_status_enum import GamePhase
 from classes.game import Vote
-from api.models.base import db, Room, save_game_on_database
+from api.models.base import db, DB_Room, save_game_on_database
 
 router = APIRouter()
 
