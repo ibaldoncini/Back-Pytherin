@@ -80,6 +80,42 @@ async def join_room(
         return {"message": f"Joined {room_name}"}
 
 
+@router.get("/room/leave/{room_name}", tags=["Room"], status_code=status.HTTP_200_OK)
+async def leave_room(
+        room_name: str = Path(
+            ...,
+            min_length=6,
+            max_length=20,
+            description="The name of the room you want to leave",
+        ),
+        email: str = Depends(valid_credentials)):
+    """
+    Endpoint to leave a room, it takes the room name as a parameter in the URL,
+    and the access_token in the request headers.
+
+    Possible respones:\n
+            200 when succesfully left.
+            401 when not logged in.
+            403 when email not confirmed.
+            404 when the room doesn't exist.
+            409 when the user is not in the room.
+            403 when the room is full or in-game.
+    """
+
+    room = hub.get_room_by_name(room_name)
+    if not await check_email_status(email):
+        raise HTTPException(status_code=403, detail="E-mail is not confirmed")
+    elif not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    elif email not in room.get_user_list():
+        raise HTTPException(status_code=409, detail="You're not in this room")
+    elif room.status == RoomStatus.IN_GAME:
+        raise HTTPException(status_code=403, detail="Room is in-game")
+    else:
+        await room.user_leave(email)
+        return {"message": f"Left {room_name}"}
+
+
 @router.get("/{room_name}/game_state", tags=["Game"], status_code=status.HTTP_200_OK)
 async def get_game_state(
         room_name: str = Path(
