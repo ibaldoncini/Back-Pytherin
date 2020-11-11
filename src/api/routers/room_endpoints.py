@@ -153,7 +153,9 @@ async def get_game_state(
     Or it will return the winner if the game is over
     """
     room = hub.get_room_by_name(room_name)
-    if not email in room.get_user_list():
+    if room is None:
+        raise HTTPException(status_code=404, detail="Room not found")
+    elif not email in room.get_user_list():
         raise HTTPException(status_code=403, detail="You're not in this room")
     elif room.status == RoomStatus.PREGAME:
         return {"room_status": room.status, "users": room.users, "owner": room.owner}
