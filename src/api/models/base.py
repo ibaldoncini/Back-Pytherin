@@ -23,6 +23,7 @@ def define_database_and_entities(**db_params):
         icon = Optional(str)
         creation_date = Required(date)
 
+
     class DB_Room(db.Entity):
         """
         Entity for the database, where we keep the status of the room
@@ -34,6 +35,7 @@ def define_database_and_entities(**db_params):
         status = Required(str)
         users = Required(Json)
         game = Required(Json)
+
 
     class Validation_Tuple (db.Entity):
         """

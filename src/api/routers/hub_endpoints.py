@@ -1,6 +1,6 @@
-from classes.room import Room
 from fastapi import *
 from api.routers.room_endpoints import hub
+from classes.room import RoomStatus
 
 router = APIRouter()
 
@@ -12,7 +12,9 @@ def get_rooms():
     ret_json = []
 
     for room_name in room_names:
-        rooms.append(hub.get_room_by_name(room_name))
+        room = hub.get_room_by_name(room_name)
+        if room.status == RoomStatus.PREGAME:
+            rooms.append(room)
 
     for room in rooms:
         aux = {"name": room.name,
