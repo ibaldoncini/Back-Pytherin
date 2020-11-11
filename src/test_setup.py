@@ -1,4 +1,4 @@
-# test_setUp.py
+# test_setup.py
 from fastapi.testclient import TestClient
 from pony.orm import db_session, commit
 from api.models.base import db

@@ -1,7 +1,7 @@
 # login_change_username.py
 from fastapi.testclient import TestClient
 from test_main import test_app
-from test_setUp import p
+from test_setup import p
 
 
 client = TestClient(test_app)
