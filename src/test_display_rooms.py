@@ -1,18 +1,23 @@
+
+from os import name
+from fastapi.test_applications import FastAPI
+from pony.orm.core import get
 from api.routers.hub_endpoints import get_rooms
 from api.routers.room_endpoints import *
 from fastapi.testclient import TestClient
-from main import app
+from test_main import test_app
 from pony.orm import db_session, commit
-from api.models.base import DB_User
+from api.models.base import db
 from random import randint
 from classes.room import Room
 from api.routers.room_endpoints import hub
 
-#from test_room_create import test_happy_path
+#from test_room_create import test_htest_appy_path
 
 
-client = TestClient(app)
+client = TestClient(test_app)
 head = ""
+
 
 def create_and_login(email: str):
     client.post(
@@ -41,7 +46,7 @@ def create_and_login(email: str):
     head: str = token_type + token
     with db_session:
         try:
-            user = DB_User.get(email=email)
+            user = db.DB_User.get(email=email)
             user.set(email_confirmed=True)
             commit()
         except:
@@ -49,7 +54,7 @@ def create_and_login(email: str):
 
     print(email + " " + head)
 
-    return {"accept": "application/json", "Authorization": head}
+    return {"accept": "test_application/json", "Authorization": head}
 
 
 def join(header, room_name: str):

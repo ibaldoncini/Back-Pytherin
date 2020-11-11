@@ -1,15 +1,15 @@
 from pony.orm import db_session, select
 from api.models.user_models import User
-from api.models.base import DB_User
+from api.models.base import db  # ,DB_User
 
 
 def check_username_not_in_database(u: User):
     with db_session:
-        username_list = select((u.username) for u in DB_User)
-        return u.username not in username_list
+        uname = u.username
+        return db.exists("select * from DB_user where username = $uname")
 
 
 def check_email_not_in_database(u: User):
     with db_session:
-        mail_list = select((u.email) for u in DB_User)
-        return u.email not in mail_list
+        mail = u.email
+        return db.exists("select * from DB_user where email = $mail")
