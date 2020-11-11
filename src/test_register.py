@@ -138,3 +138,17 @@ def test_post_user_no_password():
                                "icon": "string"
                            })
     assert response.status_code == 422
+
+
+test_register_valid_user()
+test_post_user_no_password()
+test_post_user_no_email()
+test_post_user_no_username()
+test_post_invalid_password_user3()
+test_post_invalid_password_user2()
+test_post_invalid_password_user()
+test_post_invalid_email_user()
+test_post_invalid_username_user2()
+test_post_invalid_username_user()
+test_register_already_registered_email()
+test_register_already_registered_username()

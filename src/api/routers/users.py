@@ -26,7 +26,7 @@ async def register(user: User):
       * email : EmailStr
       * password : str
     """
-    if not check_username_not_in_database(user) and not check_email_not_in_database(user):
+    if not check_username_in_database(user) and not check_email_in_database(user):
         with db_session:
             db.DB_User(
                 username=user.username,
@@ -48,11 +48,11 @@ async def register(user: User):
         }
     else:
         msg = ""
-        if check_username_not_in_database(user):
+        if check_username_in_database(user):
             msg += "Username already registered "
             raise HTTPException(
                 status_code=409, detail="Username already registered ")
-        elif check_email_not_in_database(user):
+        elif check_email_in_database(user):
             msg += "Email already registered"
             raise HTTPException(
                 status_code=409, detail="Email aready registered")
