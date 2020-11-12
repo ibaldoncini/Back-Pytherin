@@ -48,3 +48,12 @@ class Deck:
         if (len(self.cards) < 3):
             self.shuffle_deck()
         return [self.cards[0], self.cards[1], self.cards[2]]
+
+    def load_deck(self, card_list):
+        cards = []
+        for card in card_list:
+            if card == Card.FO.value:
+                cards.append(Card.FO)
+            else:
+                cards.append(Card.DE)
+        self.cards = cards

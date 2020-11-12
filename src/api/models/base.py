@@ -4,6 +4,7 @@ from datetime import date
 from pydantic.networks import EmailStr
 from typing import List
 from classes.room import Room, RoomStatus
+from classes.game import Game
 
 db = Database()
 
@@ -23,7 +24,6 @@ def define_database_and_entities(**db_params):
         icon = Optional(str)
         creation_date = Required(date)
 
-
     class DB_Room(db.Entity):
         """
         Entity for the database, where we keep the status of the room
@@ -35,7 +35,6 @@ def define_database_and_entities(**db_params):
         status = Required(str)
         users = Required(Json)
         game = Required(Json)
-
 
     class Validation_Tuple (db.Entity):
         """
@@ -52,7 +51,31 @@ def define_database_and_entities(**db_params):
 
 
 def load_from_database():
-    pass
+    db_rooms = []
+    try:
+        with db_session:
+            db_rooms += db.DB_Room.select()
+    except Exception as e:
+        print(e)
+
+    rooms = []
+    for room in db_rooms:
+        new_room = Room(room.name, room.max_players, room.owner)
+        new_room.users = room.users
+        if room.status == RoomStatus.PREGAME.value:
+            new_room.set_status(RoomStatus.PREGAME)
+        elif room.status == RoomStatus.IN_GAME.value:
+            new_room.set_status(RoomStatus.IN_GAME)
+        else:
+            new_room.set_status(RoomStatus.FINISHED)
+
+        if new_room.get_status() != RoomStatus.PREGAME:
+            new_room.game = Game(new_room.get_user_list())
+            new_room.game.build_from_json(room.game)
+
+        rooms.append(new_room)
+
+    return rooms
 
 
 async def save_game_on_database(room: Room):
@@ -62,18 +85,16 @@ async def save_game_on_database(room: Room):
         with db_session:
             if (db.exists("select * from DB_Room where name = $room_name")):
                 db_room = db.DB_Room.get(name=room_name)
-                if(room.get_status() == RoomStatus.IN_GAME):
-                    db.room.set(game=json_r)
-                elif (room.get_status() == RoomStatus.PREGAME):
-                    # db_room.set(status=room.get_status())
-                    db_room.set(users=room.get_user_list())
-                    db_room.set(game=json_r)
+                db_room.set(status=room.get_status().value)
+                db_room.set(users=room.get_user_list())
+                db_room.set(game=json_r)
+                db_room.set(owner=room.get_owner())
             else:
                 db.DB_Room(
                     name=room.get_name(),
                     max_players=room.get_max_players(),
                     owner=room.get_owner(),
-                    status="PREGAME",  # MEJORAR
+                    status=room.get_status().value,  # MEJORAR
                     users={},
                     game={}
                 )
@@ -84,16 +105,12 @@ async def save_game_on_database(room: Room):
 @db_session
 async def dump_room(room: Room):
     room_name = room.get_name()
-    keys = ('name', 'max_players', 'owner',
-            'status', 'users', 'game')
     if (db.exists("select * from DB_Room where name = $room_name")):
         try:
             room_tuple = db.get(
                 "select * from DB_Room where name = $room_name")
-        except:
-            raise HTTPException(
-                status_code=400, detail="todo mel")
-        cosa = dict(zip(keys, user_tuple))
-        return cosa
+            print(room_tuple)
+        except Exception as e:
+            print(e)
     else:
         return {"message": "boca"}

@@ -6,3 +6,5 @@ class Spell(Enum):
 
     DIVINATION = 'Divination'
     AVADA_KEDAVRA = 'Avada kedavra'
+    IMPERIUS = 'Imperius'
+    CRUCIO = 'Crucio'
