@@ -7,7 +7,7 @@ from test_setup import p
 client = TestClient(test_app)
 
 
-def test_change_nickname():  # htest_appy path
+def test_change_nickname0():  # htest_appy path
     response = client.put(
         "/users/change_username",
         headers=p[0],
@@ -27,31 +27,31 @@ def test_see_changes():
     assert new_username == "Malfoy"
 
 
-def test_unique_nickname():  # htest_appy path
+def test_unique_nickname1():  # htest_appy path
     response = client.put(
         "/users/change_username",
         headers=p[1],
         json={"username": "Malfoy"}
     )
-    assert response.status_code == 200
+    assert response.status_code == 409
 
 
-def test_unique_nickname():  # htest_appy path
+def test_back_nickname0():  # htest_appy path
     response = client.put(
         "/users/change_username",
         headers=p[0],
         json={"username": "player0"}
     )
-    assert response.status_code == 409
+    assert response.status_code == 200
 
 
-def test_unique_nickname():  # htest_appy path
+def test_back_nickname1():  # htest_appy path
     response = client.put(
         "/users/change_username",
         headers=p[1],
         json={"username": "player1"}
     )
-    assert response.status_code == 200
+    assert response.status_code == 409
 
 
 def test_invalid_new_uname1():

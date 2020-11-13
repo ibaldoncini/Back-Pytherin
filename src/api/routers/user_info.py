@@ -1,6 +1,6 @@
 # users.py
 from fastapi import APIRouter, Depends, HTTPException, status
-from pony.orm import db_session, commit
+from pony.orm import db_session, commit, select, exists
 
 from api.models.base import db  # , DB_User
 from api.models.user_models import User, NewPassword, NewUsername
@@ -17,7 +17,7 @@ router = APIRouter()
 async def change_psw(new_password_request: NewPassword, user: User = Depends(get_current_user)):
     """
     Endpoint that allows a User to change his password
-    It takes the old password and the new one, it checks that the 
+    It takes the old password and the new one, it checks that the
     new password satisfies the requirements.
     Returns:
     200 OK              message : You have changed your password succesfully,
@@ -48,7 +48,7 @@ async def change_psw(new_password_request: NewPassword, user: User = Depends(get
 async def change_username(new_username: NewUsername, user: User = Depends(get_current_user)):
     """
     Endpoint that allows a User to change his Username
-    It takes a new username, it checks that the 
+    It takes a new username, it checks that the
     new username satisfies the requirements.
     Returns:
     200 OK              message : You have changed your username succesfully,
@@ -60,18 +60,20 @@ async def change_username(new_username: NewUsername, user: User = Depends(get_cu
     email = user['email']
     try:
         with db_session:
-            uname = user["username"]
-            if not db.exists("select * from DB_user where username = $uname"):
-                raise HTTPException(
-                    status_code=409, detail="Nickname already registered")
-            else:
-                user = db.DB_User.get(email=email)
-                user.set(username=new_username.username)
-                commit()
+            uname = new_username.username
+            exists = db.exists("select * from DB_user where username = $uname")
     except:
         raise HTTPException(
             status_code=503, detail="Service unavailable, try again soon")
-    return {"message": "You have changed your username succesfully"}
+    if exists:
+        raise HTTPException(
+            status_code=409, detail="Nickname already registered")
+    else:
+        with db_session:
+            user = db.DB_User.get(email=email)
+            user.set(username=new_username.username)
+            commit()
+    return {"message": "You have changed your nickname succesfully"}
 
 
 @router.get("/users/me", status_code=200, tags=["Users"])

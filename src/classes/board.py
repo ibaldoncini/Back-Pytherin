@@ -15,10 +15,12 @@ class Board:
             spell_dict = {}
         elif n_of_players >= 7:
             spell_dict = {}
-        elif n_of_players >= 5:
+        else:
             spell_dict = {
                 Spell.DIVINATION: 1,
-                Spell.AVADA_KEDAVRA: 2
+                Spell.AVADA_KEDAVRA: 2,
+                Spell.IMPERIUS: 0,
+                Spell.CRUCIO: 0
             }
 
         return spell_dict
@@ -55,3 +57,9 @@ class Board:
             return Spell.AVADA_KEDAVRA
         else:
             return None
+
+    def load_spells(self, json):
+        self.spells[Spell.DIVINATION] = json[Spell.DIVINATION.value]
+        self.spells[Spell.AVADA_KEDAVRA] = json[Spell.AVADA_KEDAVRA.value]
+        self.spells[Spell.IMPERIUS] = json[Spell.IMPERIUS.value]
+        self.spells[Spell.CRUCIO] = json[Spell.CRUCIO.value]

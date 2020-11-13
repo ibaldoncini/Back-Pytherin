@@ -104,17 +104,19 @@ class Room:
     def dump_game_json(self):
         game = self.get_game()
         if self.get_game() is not None:
-            json_save = {"death_eaters": game.get_de_list(),
-                         "voldemort": game.get_voldemort(),
-                         "minister": game.get_minister_user(),
-                         "director": game.get_director_user(),
-                         "last_minister": game.get_last_minister_user(),
-                         "last_director": game.get_last_minister_user(),
-                         "de_procs": game.get_de_procs(),
-                         "fo_procs": game.get_fo_procs(),
-                         "player_list": game.get_alive_players(),
-                         "deck": game.get_deck(),
-                         "spells": game.get_board_spells()}
+            json = {"death_eaters": game.get_de_list(),
+                    "voldemort": game.get_voldemort(),
+                    "minister": game.get_minister_user(),
+                    "director": game.get_director_user(),
+                    "last_minister": game.get_last_minister_user(),
+                    "last_director": game.get_last_minister_user(),
+                    "de_procs": game.get_de_procs(),
+                    "fo_procs": game.get_fo_procs(),
+                    "player_list": game.get_alive_players(),
+                    "deck_cards": game.get_deck(),
+                    "game_cards": list(map(lambda c: c.value, game.get_cards())),
+                    "spells": game.get_board_spells(),
+                    "phase": game.get_phase().value}
         else:
-            json_save = {}
-        return json_save
+            json = {}
+        return json

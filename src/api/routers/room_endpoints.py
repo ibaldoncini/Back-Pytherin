@@ -8,12 +8,18 @@ from classes.room import Room, RoomStatus
 from classes.room_hub import RoomHub
 from classes.role_enum import Role
 from classes.game_status_enum import GamePhase
-from classes.game import Vote
-from api.models.base import db, save_game_on_database, dump_room  # , Room
+from classes.game import Vote, Game
+from api.models.base import db, save_game_on_database, dump_room, load_from_database  # , Room
 
 router = APIRouter()
-
 hub = RoomHub()
+
+
+@router.on_event("startup")
+def load_hub():
+    prev_rooms = load_from_database()
+    for room in prev_rooms:
+        hub.add_room(room)
 
 
 @router.post("/room/new", tags=["Room"], status_code=status.HTTP_201_CREATED)
@@ -153,7 +159,9 @@ async def get_game_state(
     Or it will return the winner if the game is over
     """
     room = hub.get_room_by_name(room_name)
-    if not email in room.get_user_list():
+    if room is None:
+        raise HTTPException(status_code=404, detail="Room not found")
+    elif not email in room.get_user_list():
         raise HTTPException(status_code=403, detail="You're not in this room")
     elif room.status == RoomStatus.PREGAME:
         return {"room_status": room.status, "users": room.users, "owner": room.owner}
@@ -211,8 +219,8 @@ async def start_game(
         raise HTTPException(
             status_code=409, detail="Not enough players")
     else:
-        await save_game_on_database(room)
         room.start_game()
+        await save_game_on_database(room)
         return {"message": "Succesfully started"}
 
 
@@ -224,8 +232,12 @@ async def dump(
             max_length=20,
         ),
         email: str = Depends(valid_credentials)):
-    room = hub.get_room_by_name(room_name)
-    return dump_room(room)
+
+    #l = load_from_database()
+    print("=====HUB======")
+    for i in hub.rooms:
+        print(i.name)
+    return "hello"
 
 
 @router.put("/{room_name}/director", tags=["Game"], status_code=status.HTTP_201_CREATED)
@@ -254,10 +266,9 @@ async def propose_director(body: ProposeDirectorRequest,
                 status_code=403, detail="That player cannot be the director this round")
         else:
 
-            await save_game_on_database(room)
-
             game.set_director(body.director_email)
             game.set_phase(GamePhase.VOTE_DIRECTOR)
+            await save_game_on_database(room)
             return {"message": "Director proposed successfully"}
 
     else:
@@ -391,6 +402,23 @@ async def cast_divination(room_name: str = Path(..., min_length=6, max_length=20
     minister = game.get_minister_user()
     if (phase == GamePhase.CAST_DIVINATION and email == minister):
         return {"cards": game.divination()}
+    else:
+        raise HTTPException(
+            detail="You're not allowed to do this", status_code=405)
+
+
+@router.put("/{room_name}/cast/confirm_divination", tags=["Game"], status_code=status.HTTP_200_OK)
+async def confirm_divination(room_name: str = Path(..., min_length=6, max_length=20),
+                             email: str = Depends(valid_credentials)):
+    room = check_game_preconditions(email, room_name, hub)
+
+    game = room.get_game()
+    phase = game.get_phase()
+    minister = game.get_minister_user()
+
+    if (phase == GamePhase.CAST_DIVINATION and email == minister):
+        game.restart_turn()
+        return {"message": "Divination confirmed, moving on"}
     else:
         raise HTTPException(
             detail="You're not allowed to do this", status_code=405)

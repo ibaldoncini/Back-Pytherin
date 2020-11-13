@@ -60,6 +60,49 @@ class Game:
 
         return players
 
+    def build_from_json(self, json):
+        players = []
+        for user in self.users:
+            new_player = Player(user)
+            if user not in json["death_eaters"]:
+                new_player.set_loyalty(Loyalty.FENIX_ORDER)
+                new_player.set_role(Role.FENIX_ORDER)
+            else:
+                new_player.set_loyalty(Loyalty.DEATH_EATER)
+                if json["voldemort"] == user:
+                    new_player.set_role(Role.VOLDEMORT)
+                else:
+                    new_player.set_role(Role.DEATH_EATER)
+
+            if user not in json["player_list"]:
+                new_player.kill()
+
+            players.append(new_player)
+
+        self.minister = next(
+            (p for p in self.players if p.get_user() == json["minister"]), None)
+        self.director = next(
+            (p for p in self.players if p.get_user() == json["director"]), None)
+        self.last_minister = next(
+            (p for p in self.players if p.get_user() == json["last_minister"]), None)
+        self.last_director = next(
+            (p for p in self.players if p.get_user() == json["last_director"]), None)
+        self.board.de_proclaims = json["de_procs"]
+        self.board.fo_proclaims = json["fo_procs"]
+        self.board.load_spells(json["spells"])
+
+        cards = []
+        for card in json["game_cards"]:
+            if card == Card.FO.value:
+                cards.append(Card.FO)
+            else:
+                cards.append(Card.DE)
+        self.cards = cards
+
+        self.deck.load_deck(json["deck_cards"])
+        # Maybe set phase using the phase field in the json?
+        self.set_phase(GamePhase.VOTE_DIRECTOR)
+
     def get_minister_user(self):
         if self.minister is None:
             return "Undefined"
@@ -117,7 +160,7 @@ class Game:
         return result
 
     def get_deck(self):
-        result = map(lambda c: c.value, self.cards)
+        result = map(lambda c: c.value, self.deck.cards)
         return list(result)
 
     def discard(self, index):
@@ -217,7 +260,6 @@ class Game:
 
     def divination(self):
         top_three = self.cards
-        self.restart_turn()
 
         return top_three
 
