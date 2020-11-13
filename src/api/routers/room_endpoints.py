@@ -407,6 +407,23 @@ async def cast_divination(room_name: str = Path(..., min_length=6, max_length=20
             detail="You're not allowed to do this", status_code=405)
 
 
+@router.put("/{room_name}/cast/confirm_divination", tags=["Game"], status_code=status.HTTP_200_OK)
+async def confirm_divination(room_name: str = Path(..., min_length=6, max_length=20),
+                             email: str = Depends(valid_credentials)):
+    room = check_game_preconditions(email, room_name, hub)
+
+    game = room.get_game()
+    phase = game.get_phase()
+    minister = game.get_minister_user()
+
+    if (phase == GamePhase.CAST_DIVINATION and email == minister):
+        game.restart_turn()
+        return {"message": "Divination confirmed, moving on"}
+    else:
+        raise HTTPException(
+            detail="You're not allowed to do this", status_code=405)
+
+
 @ router.put("/{room_name}/cast/avada-kedavra", tags=["Game"], status_code=status.HTTP_200_OK)
 async def cast_avada_kedavra(body: TargetedSpellRequest,
                              room_name: str = Path(...,

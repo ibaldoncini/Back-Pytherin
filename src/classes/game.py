@@ -260,7 +260,6 @@ class Game:
 
     def divination(self):
         top_three = self.cards
-        self.restart_turn()
 
         return top_three
 
