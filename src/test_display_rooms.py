@@ -1,114 +1,44 @@
-
-from os import name
-from fastapi.test_applications import FastAPI
-from pony.orm.core import get
 from api.routers.hub_endpoints import get_rooms
 from api.routers.room_endpoints import *
 from fastapi.testclient import TestClient
 from test_main import test_app
-from pony.orm import db_session, commit
-from api.models.base import db
 from random import randint
-from classes.room import Room
 from api.routers.room_endpoints import hub
-
-#from test_room_create import test_htest_appy_path
-
+from test_setup import join,create as create_room,start_game,p
 
 client = TestClient(test_app)
-head = ""
 
+#p = register_and_login()
 
-def create_and_login(email: str):
-    client.post(
-        "/users/register",
-        json={
-            "username": email.split('@')[0],
-            "email": email,
-            "password": "Heladera65",
-            "icon": "string",
-        })
-    response_login = client.post(
-        "/users",
-        data={
-            "grant_type": "",
-            "username": email,
-            "password": "Heladera65",
-            "scope": "",
-            "client_id": "",
-            "client_secret": "",
-        },
-    )
-    assert response_login.status_code == 200
-    rta: dict = response_login.json()
-    token: str = rta["access_token"]
-    token_type: str = "Bearer "
-    head: str = token_type + token
-    with db_session:
-        try:
-            user = db.DB_User.get(email=email)
-            user.set(email_confirmed=True)
-            commit()
-        except:
-            pass
-
-    print(email + " " + head)
-
-    return {"accept": "test_application/json", "Authorization": head}
-
-
-def join(header, room_name: str):
-    client.get(
-        f"/room/join/{room_name}",
-        headers=header,
-    )
-
-
-owner = create_and_login("room_owner@email.com")
-p1 = create_and_login("player1@email.com")
-p2 = create_and_login("player2@email.com")
-p3 = create_and_login("player3@email.com")
-p4 = create_and_login("player4@email.com")
-
-
-def create_room(name,max_players):
-  response = client.post(
-      "/room/new",
-      headers=owner,
-      json={"name": name, "max_players": max_players}
-  )
-  #assert response.status_code == 201
-  #assert response.json() == {
-   #   "message": "Room created successfully"}
-
-players = [owner,p1,p2,p3,p4]
+owner = p[0]
+p1 = p[1]
+p2 = p[2]
+p3 = p[3]
+p4 = p[4]
 
 
 def join_several_players (room,n):
-  if n > len(players):
+  if n > len(p):
     return
   count = 0
-  for p in players:
+  for player in p:
     if count == n:
       break
-    join(p,room)
+    join(player,room)
     count += 1
-
-
-def room_start (room_name):
-  room = hub.get_room_by_name(room_name)
-  room.status = RoomStatus.IN_GAME
 
 
 def create_several_rooms (n):
   for i in range (n):
     max_p = randint(5,10)
     room_name = "Pytherin" + str(i)
-    create_room(room_name,max_p)
+    #TODO max players
+    create_room(owner,room_name)
 
 #TODO test if the match still appearing even if it started
 #hint: that should not happen
-def main ():
+def test_main ():
+  #This prints the room created by test_setup
   print(get_rooms())
   N_ROOMS = 5
   create_several_rooms(N_ROOMS)
@@ -125,7 +55,7 @@ def main ():
 
   print("Rooms with people " + get_rooms().__str__())
 
-  room_start(room_names[0])
+  start_game(owner,room_names[0])
   print("\n\nStarted first room: " + get_rooms().__str__())
 
-main()
+#main()
