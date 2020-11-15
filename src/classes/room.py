@@ -49,7 +49,7 @@ class Room:
         """
         return len(self.users) < self.max_players and self.status == RoomStatus.PREGAME
 
-    def user_leave(self, user: str):
+    async def user_leave(self, user: str):
         """
         Removes a user from the current users list.
         Then passes ownership or removes the room from the hub if necessary
