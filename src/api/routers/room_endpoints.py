@@ -311,7 +311,7 @@ async def vote(
             status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Game is not in voting phase")
 
     if len(game.get_current_players()) == len(game.votes):
-        game.compute_votes()
+        await game.compute_votes()
 
     return {"message": "Succesfully voted!"}
 
