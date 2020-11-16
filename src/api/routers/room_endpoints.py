@@ -1,15 +1,17 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Path
+from fastapi_utils.tasks import repeat_every
 from api.models.room_models import *
-from api.handlers.authentication import *
+from api.handlers.authentication import valid_credentials, get_username_from_token
 from api.handlers.game_checks import *
 from api.utils.room_utils import check_email_status, votes_to_json
+from datetime import datetime, timedelta
 
 from classes.room import Room, RoomStatus
 from classes.room_hub import RoomHub
 from classes.role_enum import Role
 from classes.game_status_enum import GamePhase
 from classes.game import Vote, Game
-from api.models.base import db, save_game_on_database, dump_room, load_from_database  # , Room
+from api.models.base import db, save_game_on_database, load_from_database, remove_room_from_database
 
 router = APIRouter()
 hub = RoomHub()
@@ -20,6 +22,19 @@ def load_hub():
     prev_rooms = load_from_database()
     for room in prev_rooms:
         hub.add_room(room)
+
+
+@router.on_event("startup")
+@repeat_every(seconds=60, wait_first=True)
+async def clean_hub_and_db():
+    for room in hub.rooms:
+        owner = room.get_owner()
+        count = room.get_user_count()
+        last_update_delta = datetime.now() - room.get_last_update()
+        if ((owner is None and count <= 0)
+                or (last_update_delta > timedelta(seconds=600))):
+            hub.remove_room(room)
+            await remove_room_from_database(room)
 
 
 @router.post("/room/new", tags=["Room"], status_code=status.HTTP_201_CREATED)
@@ -90,6 +105,7 @@ async def join_room(
         raise HTTPException(status_code=403,
                             detail="Room is full or in-game")
     else:
+
         await room.user_join(username)
         await save_game_on_database(room)
         return {"message": f"Joined {room_name}"}
@@ -407,6 +423,7 @@ async def cast_divination(room_name: str = Path(..., min_length=6, max_length=20
 @router.put("/{room_name}/cast/confirm_divination", tags=["Game"], status_code=status.HTTP_200_OK)
 async def confirm_divination(room_name: str = Path(..., min_length=6, max_length=20),
                              username: str = Depends(get_username_from_token)):
+    
     room = check_game_preconditions(username, room_name, hub)
 
     game = room.get_game()

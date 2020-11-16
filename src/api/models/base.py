@@ -5,7 +5,8 @@ from pydantic.networks import EmailStr
 from typing import List
 from classes.room import Room, RoomStatus
 from classes.game import Game
-
+import sys
+import os
 db = Database()
 
 
@@ -69,7 +70,7 @@ def load_from_database():
         else:
             new_room.set_status(RoomStatus.FINISHED)
 
-        if new_room.get_status() != RoomStatus.PREGAME:
+        if (new_room.get_status() != RoomStatus.PREGAME and room.game is not {}):
             new_room.game = Game(new_room.get_user_list())
             new_room.game.build_from_json(room.game)
 
@@ -100,6 +101,15 @@ async def save_game_on_database(room: Room):
                 )
     except Exception as e:
         print(f"Something went wrong on the db, {e}")
+
+
+async def remove_room_from_database(room: Room):
+    try:
+        room_name = room.get_name()
+        with db_session:
+            delete(r for r in db.DB_Room if r.name == room_name)
+    except Exception as e:
+        print(e)
 
 
 @db_session
