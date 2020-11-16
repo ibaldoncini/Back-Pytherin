@@ -115,18 +115,26 @@ class Game:
         else:
             return (self.minister.get_user())
 
+    def get_next_player_alive(self, index: int):
+        is_alive = False
+        new_index = (index + 1) % self.n_of_players
+        while not is_alive:
+            if self.players[new_index].is_player_alive():
+                return self.players[new_index]
+            else:
+                new_index = (index + 1) % self.n_of_players
+        # return players[new_index]
+
     def change_minister(self):
         """
         Method that changes the current minister, it will be called at the
         beggining of a new turn.
-        It changes the minister just assigning the role to the next player in
-        the list of players of the match.
+        It changes the minister just assigning the role to the next player alive
+        in the list of players of the match.
         """
-
         self.last_minister = self.minister
         last_minister_index = self.players.index(self.last_minister)
-        new_minister_index = (last_minister_index + 1) % self.n_of_players
-        self.minister = self.players[new_minister_index]
+        self.minister = self.get_next_player_alive(last_minister_index)
 
     def get_director_user(self):
         if self.director is None:
@@ -210,7 +218,7 @@ class Game:
         return voldemort.get_user()
 
     def get_votes(self):
-        if (len(self.get_current_players()) == len(self.votes)
+        if (len(self.get_alive_players()) == len(self.votes)
                 and self.phase == GamePhase.VOTE_DIRECTOR):
             return self.votes
         return {}

@@ -84,9 +84,9 @@ def vote(header: str, vote: str, room_name: str):
 
 
 p = []
-emails = []
+unames = []
 for i in range(0, 5):
-    emails.append(f"player{i}")
+    unames.append(f"player{i}")
     # print(f"player{i}@example.com")
     register(f"player{i}@example.com")
     p.append(login(f"player{i}@example.com"))

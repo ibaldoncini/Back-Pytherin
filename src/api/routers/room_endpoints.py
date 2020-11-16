@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Path
 from fastapi_utils.tasks import repeat_every
 from api.models.room_models import *
 from api.handlers.authentication import valid_credentials, get_username_from_token
-from api.handlers.game_checks import *
+from api.handlers.game_checks import check_game_preconditions
 from api.utils.room_utils import check_email_status, votes_to_json
 from datetime import datetime, timedelta
 
@@ -277,7 +277,6 @@ async def propose_director(body: ProposeDirectorRequest,
             raise HTTPException(
                 status_code=403, detail="That player cannot be the director this round")
         else:
-
             game.set_director(body.director_email)
             game.set_phase(GamePhase.VOTE_DIRECTOR)
             await save_game_on_database(room)
@@ -423,7 +422,7 @@ async def cast_divination(room_name: str = Path(..., min_length=6, max_length=20
 @router.put("/{room_name}/cast/confirm_divination", tags=["Game"], status_code=status.HTTP_200_OK)
 async def confirm_divination(room_name: str = Path(..., min_length=6, max_length=20),
                              username: str = Depends(get_username_from_token)):
-    
+
     room = check_game_preconditions(username, room_name, hub)
 
     game = room.get_game()
