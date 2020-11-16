@@ -115,17 +115,6 @@ class Game:
         else:
             return (self.minister.get_user())
 
-    def get_next_player_alive(self, index: int):
-        is_alive = False
-        new_index = (index + 1) % self.n_of_players
-        while not is_alive:
-            if self.players[new_index].is_player_alive():
-                is_alive = True
-                return self.players[new_index]
-            else:
-                new_index = (index + 1) % self.n_of_players
-        # return players[new_index]
-
     def change_minister(self):
         """
         Method that changes the current minister, it will be called at the
@@ -134,8 +123,11 @@ class Game:
         in the list of players of the match.
         """
         self.last_minister = self.minister
-        last_minister_index = self.players.index(self.last_minister)
-        self.minister = self.get_next_player_alive(last_minister_index)
+        alive_players = list(
+            filter(lambda p: p.is_player_alive(), self.players))
+        last_minister_index = alive_players.index(self.last_minister)
+        new_minister_index = (last_minister_index + 1) % (len(alive_players))
+        self.minister = alive_players[new_minister_index]
 
     def get_director_user(self):
         if self.director is None:

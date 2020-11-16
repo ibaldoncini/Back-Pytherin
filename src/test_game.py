@@ -25,6 +25,7 @@ while not we_know_who_voldemort_is:
     )
     rta: dict = response_get_pregame.json()
     voldemort_uname = rta["voldemort"]
+    j = j+1
     if voldemort_uname != "":
         we_know_who_voldemort_is = True
     else:
@@ -156,14 +157,16 @@ while game_is_not_over:
         divination_casted = True
 
     if (de_score == 4 or de_score == 5) and avadas_avaliables >= 1:
-        #victim_index = (minister_index - 1) % 5
-        #victim_uname = unames[victim_index]
+        victim_index = (minister_index + 1) % 5
+        victim_uname = unames[victim_index]
+        """ 
         if minister_index != 3 and avadas_avaliables > 1:
             victim_index = 3
             victim_uname = unames[victim_index]
         else:
             victim_index = 4
-            victim_uname = unames[victim_index]
+            victim_uname = unames[victim_index] 
+        """
 
         response_cast_avada = client.put(
             "/pytherin/cast/avada-kedavra",

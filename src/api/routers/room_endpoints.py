@@ -99,14 +99,14 @@ async def join_room(
                             detail="E-mail is not confirmed")
     elif not room:
         raise HTTPException(status_code=404, detail="Room not found")
-    elif username in room.get_user_list():
+    elif email in room.get_emails_list():
         return {"message": f"Joined {room_name}"}
     elif not room.is_open():
         raise HTTPException(status_code=403,
                             detail="Room is full or in-game")
     else:
 
-        await room.user_join(username)
+        await room.user_join(username, email)
         await save_game_on_database(room)
         return {"message": f"Joined {room_name}"}
 
@@ -146,7 +146,7 @@ async def leave_room(
     elif room.status == RoomStatus.IN_GAME:
         raise HTTPException(status_code=403, detail="Room is in-game")
     else:
-        await room.user_leave(username)
+        await room.user_leave(username, email)
         return {"message": f"Left {room_name}"}
 
 
@@ -246,6 +246,9 @@ async def start_game(
     elif (len(room.get_user_list()) < 5):
         raise HTTPException(
             status_code=409, detail="Not enough players")
+    elif (room.get_status() != RoomStatus.PREGAME):
+        raise HTTPException(
+            status_code=409, detail="Game on room has already started")
     else:
         room.start_game()
         await save_game_on_database(room)

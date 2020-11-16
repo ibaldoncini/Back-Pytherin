@@ -31,10 +31,11 @@ class Room:
         self.max_players: int = max_players
         self.owner: str = owner
         self.users: List[str] = []
+        self.emails: List[str] = []
         self.status: RoomStatus = RoomStatus.PREGAME
         self.game: Game = None
 
-    async def user_join(self, user: str):
+    async def user_join(self, user: str, email: str):
         """
         Add  'user' to the current users list
         user_connect shouldn't be called when is_open == false, but doublecheck anyway.
@@ -43,6 +44,7 @@ class Room:
         """
         if self.is_open():
             self.users.append(user)
+            self.emails.append(email)
 
         if self.owner is None:
             self.owner = user
@@ -53,12 +55,13 @@ class Room:
         """
         return len(self.users) < self.max_players and self.status == RoomStatus.PREGAME
 
-    async def user_leave(self, user: str):
+    async def user_leave(self, user: str, email: str):
         """
         Removes a user from the current users list.
         Then passes ownership or removes the room from the hub if necessary
         """
         self.users.remove(user)
+        self.emails.remove(email)
         if self.users == []:
             # WIP
             # server.remove_room(self) -> remove myself from hub
@@ -81,6 +84,9 @@ class Room:
     def get_user_list(self):
         """User list getter"""
         return self.users
+
+    def get_emails_list(self):
+        return self.emails
 
     def start_game(self):
         self.game = Game(self.users)
