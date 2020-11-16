@@ -12,6 +12,7 @@ from classes.game_status_enum import GamePhase
 from classes.spell import Spell
 from asyncio import sleep as async_sleep
 
+
 class Vote(Enum):
     LUMOS = "Lumos"
     NOX = "Nox"
@@ -185,6 +186,7 @@ class Game:
         alive_players = filter(lambda p: p.is_player_alive(), all_players)
         return list(map(lambda p: p.get_user(), alive_players))
 
+    # TO DO NOW WITH USERNAMES
     def __get_player_by_email(self, email: str):
         player = next(p for p in self.players if p.get_user() == email)
         return player
@@ -203,8 +205,8 @@ class Game:
         return voldemort.get_user()
 
     def get_votes(self):
-        if (len(self.get_current_players()) == len(self.votes) 
-            and self.phase == GamePhase.VOTE_DIRECTOR):
+        if (len(self.get_current_players()) == len(self.votes)
+                and self.phase == GamePhase.VOTE_DIRECTOR):
             return self.votes
         return {}
 
@@ -221,7 +223,7 @@ class Game:
         votes = Counter(self.votes.values())
         lumos_count = votes['Lumos']
         nox_count = votes['Nox']
-        #Wait so the players can see the votes
+        # Wait so the players can see the votes
         await async_sleep(5)
         if (lumos_count >= nox_count):
             if (self.director.is_voldemort() and self.board.get_de_procs() >= 3):

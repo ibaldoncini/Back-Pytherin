@@ -24,8 +24,10 @@ def load_hub():
 
 @router.post("/room/new", tags=["Room"], status_code=status.HTTP_201_CREATED)
 async def create_room(
-    room_info: RoomCreationRequest, email: str = Depends(valid_credentials)
-):
+        room_info: RoomCreationRequest,
+        email: str = Depends(valid_credentials),
+        username: str = Depends(get_username_from_token)):
+
     """
     Endpoint for creating a new room.
 
@@ -44,15 +46,16 @@ async def create_room(
     if not email_confirmed:
         raise HTTPException(status_code=403, detail="E-mail not confirmed")
     elif room_name in (hub.all_rooms()):
-        raise HTTPException(status_code=409, detail="Room name already in use")
+        raise HTTPException(status_code=409,
+                            detail="Room name already in use")
     else:
-        new_room = Room(room_name, max_players, email)
+        new_room = Room(room_name, max_players, username)
         await save_game_on_database(new_room)
         hub.add_room(new_room)
         return {"message": "Room created successfully"}
 
 
-@router.get("/room/join/{room_name}", tags=["Room"], status_code=status.HTTP_200_OK)
+@ router.get("/room/join/{room_name}", tags=["Room"], status_code=status.HTTP_200_OK)
 async def join_room(
         room_name: str = Path(
             ...,
@@ -60,7 +63,8 @@ async def join_room(
             max_length=20,
             description="The name of the room you want to join",
         ),
-        email: str = Depends(valid_credentials)):
+        email: str = Depends(valid_credentials),
+        username: str = Depends(get_username_from_token)):
     """
     Endpoint to join a room, it takes the room name as a parameter in the URL,
     and the access_token in the request headers.
@@ -76,20 +80,22 @@ async def join_room(
 
     room = hub.get_room_by_name(room_name)
     if not await check_email_status(email):
-        raise HTTPException(status_code=403, detail="E-mail is not confirmed")
+        raise HTTPException(status_code=403,
+                            detail="E-mail is not confirmed")
     elif not room:
         raise HTTPException(status_code=404, detail="Room not found")
-    elif email in room.get_user_list():
+    elif username in room.get_user_list():
         return {"message": f"Joined {room_name}"}
     elif not room.is_open():
-        raise HTTPException(status_code=403, detail="Room is full or in-game")
+        raise HTTPException(status_code=403,
+                            detail="Room is full or in-game")
     else:
+        await room.user_join(username)
         await save_game_on_database(room)
-        await room.user_join(email)
         return {"message": f"Joined {room_name}"}
 
 
-@router.get("/room/leave/{room_name}", tags=["Room"], status_code=status.HTTP_200_OK)
+@ router.get("/room/leave/{room_name}", tags=["Room"], status_code=status.HTTP_200_OK)
 async def leave_room(
         room_name: str = Path(
             ...,
@@ -97,7 +103,8 @@ async def leave_room(
             max_length=20,
             description="The name of the room you want to leave",
         ),
-        email: str = Depends(valid_credentials)):
+        email: str = Depends(valid_credentials),
+        username: str = Depends(get_username_from_token)):
     """
     Endpoint to leave a room, it takes the room name as a parameter in the URL,
     and the access_token in the request headers.
@@ -113,19 +120,21 @@ async def leave_room(
 
     room = hub.get_room_by_name(room_name)
     if not await check_email_status(email):
-        raise HTTPException(status_code=403, detail="E-mail is not confirmed")
+        raise HTTPException(status_code=403,
+                            detail="E-mail is not confirmed")
     elif not room:
         raise HTTPException(status_code=404, detail="Room not found")
-    elif email not in room.get_user_list():
-        raise HTTPException(status_code=409, detail="You're not in this room")
+    elif username not in room.get_user_list():
+        raise HTTPException(status_code=409,
+                            detail="You're not in this room")
     elif room.status == RoomStatus.IN_GAME:
         raise HTTPException(status_code=403, detail="Room is in-game")
     else:
-        await room.user_leave(email)
+        await room.user_leave(username)
         return {"message": f"Left {room_name}"}
 
 
-@router.get("/{room_name}/game_state", tags=["Game"], status_code=status.HTTP_200_OK)
+@ router.get("/{room_name}/game_state", tags=["Game"], status_code=status.HTTP_200_OK)
 async def get_game_state(
         room_name: str = Path(
             ...,
@@ -133,7 +142,8 @@ async def get_game_state(
             max_length=20,
             description="The room wich you want to get the game state of",
         ),
-        email: str = Depends(valid_credentials)):
+        email: str = Depends(valid_credentials),
+        username: str = Depends(get_username_from_token)):
 
     """
     Endpoint for getting the state of the game at every moment
@@ -161,14 +171,15 @@ async def get_game_state(
     room = hub.get_room_by_name(room_name)
     if room is None:
         raise HTTPException(status_code=404, detail="Room not found")
-    elif not email in room.get_user_list():
-        raise HTTPException(status_code=403, detail="You're not in this room")
+    elif not username in room.get_user_list():
+        raise HTTPException(status_code=403,
+                            detail="You're not in this room")
     elif room.status == RoomStatus.PREGAME:
         return {"room_status": room.status, "users": room.users, "owner": room.owner}
     else:
         room.update_status()
         game = room.get_game()
-        my_role = game.get_player_role(email)
+        my_role = game.get_player_role(username)
 
         if (my_role == Role.DEATH_EATER or my_role == Role.VOLDEMORT or room.status == RoomStatus.FINISHED):
             de_list = game.get_de_list()
@@ -191,7 +202,7 @@ async def get_game_state(
             "de_procs": game.get_de_procs(),
             "fo_procs": game.get_fo_procs(),
             "phase": game.get_phase(),
-            "player_list": game.get_current_players(),
+            "player_list": game.get_alive_players(),
             "votes": votes_to_json(game.get_votes())
         }
         return json_r
@@ -204,7 +215,8 @@ async def start_game(
             min_length=6,
             max_length=20,
         ),
-        email: str = Depends(valid_credentials)):
+        email: str = Depends(valid_credentials),
+        username: str = Depends(get_username_from_token)):
     """
     Endpoint for starting the game, should only be used by the room owner.
 
@@ -212,7 +224,7 @@ async def start_game(
     """
     room = hub.get_room_by_name(room_name)
 
-    if (room.owner != email):
+    if (room.owner != username):
         raise HTTPException(
             status_code=403, detail="You're not the owner of the room")
     elif (len(room.get_user_list()) < 5):
@@ -224,22 +236,6 @@ async def start_game(
         return {"message": "Succesfully started"}
 
 
-@router.get("/{room_name}/dump", tags=["Game"])
-async def dump(
-        room_name: str = Path(
-            ...,
-            min_length=6,
-            max_length=20,
-        ),
-        email: str = Depends(valid_credentials)):
-
-    #l = load_from_database()
-    print("=====HUB======")
-    for i in hub.rooms:
-        print(i.name)
-    return "hello"
-
-
 @router.put("/{room_name}/director", tags=["Game"], status_code=status.HTTP_201_CREATED)
 async def propose_director(body: ProposeDirectorRequest,
                            room_name: str = Path(
@@ -247,16 +243,16 @@ async def propose_director(body: ProposeDirectorRequest,
                                min_length=6,
                                max_length=20,
                            ),
-                           email: str = Depends(valid_credentials)):
+                           username: str = Depends(get_username_from_token)):
 
     """
     Endpoint used by the minister to propose the director
     """
-    room = check_game_preconditions(email, room_name, hub)
+    room = check_game_preconditions(username, room_name, hub)
     game = room.get_game()
     phase = game.get_phase()
     minister = game.get_minister_user()
-    if (phase == GamePhase.PROPOSE_DIRECTOR and minister == email):
+    if (phase == GamePhase.PROPOSE_DIRECTOR and minister == username):
         if body.director_email not in game.get_current_players():
             raise HTTPException(
                 status_code=404, detail="Player not found")
@@ -276,10 +272,10 @@ async def propose_director(body: ProposeDirectorRequest,
             detail="You're not allowed to do this", status_code=405)
 
 
-@ router.put("/{room_name}/vote", tags=["Game"], status_code=status.HTTP_200_OK)
+@router.put("/{room_name}/vote", tags=["Game"], status_code=status.HTTP_200_OK)
 async def vote(
         vote_req: VoteRequest,
-        email: str = Depends(valid_credentials),
+        username: str = Depends(get_username_from_token),
         room_name: str = Path(
             ...,
             min_length=6,
@@ -289,10 +285,11 @@ async def vote(
     This endpoint registers a vote and who`s voting.
     Throws 409 if the game if you already voted
     Throws 405 if the game is not in phase of voting
+    Throws 404 if the game cannot be found in Hub
     Throws 400 if the vote is not Lumos or Nox
     """
 
-    room = check_game_preconditions(email, room_name, hub)
+    room = check_game_preconditions(username, room_name, hub)
     game = room.get_game()
 
     if game.phase == GamePhase.VOTE_DIRECTOR:
@@ -300,30 +297,30 @@ async def vote(
         if vote_req.vote not in [Vote.LUMOS.value, Vote.NOX.value]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid vote")
-        elif email in game.get_votes().keys():
+        elif username in game.get_votes().keys():
             raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                                 detail="You already voted")
         else:
-            game.register_vote(vote_req.vote, email)
+            game.register_vote(vote_req.vote, username)
 
     else:
         raise HTTPException(
             status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Game is not in voting phase")
 
-    if len(game.get_current_players()) == len(game.votes):
+    if len(game.get_alive_players()) == len(game.votes):
         await game.compute_votes()
 
     return {"message": "Succesfully voted!"}
 
 
-@ router.get("/{room_name}/cards", tags=["Game"], status_code=status.HTTP_200_OK)
+@router.get("/{room_name}/cards", tags=["Game"], status_code=status.HTTP_200_OK)
 async def get_cards(
     room_name: str = Path(
         ...,
         min_length=6,
         max_length=20,
     ),
-        email: str = Depends(valid_credentials)):
+        username: str = Depends(get_username_from_token)):
 
     """
     Endpoint for getting the cards, used both by minister and director, but at their respective times.
@@ -332,15 +329,15 @@ async def get_cards(
     ['Order of the Fenix proclamation',
         'Order of the Fenix proclamation', 'Death Eater proclamation']
     """
-    room = check_game_preconditions(email, room_name, hub)
+    room = check_game_preconditions(username, room_name, hub)
 
     game = room.get_game()
     phase = game.get_phase()
     minister = game.get_minister_user()
     director = game.get_director_user()
 
-    if ((phase == GamePhase.MINISTER_DISCARD and minister == email) or
-            (phase == GamePhase.DIRECTOR_DISCARD and director == email)):
+    if ((phase == GamePhase.MINISTER_DISCARD and minister == username) or
+            (phase == GamePhase.DIRECTOR_DISCARD and director == username)):
         #
         return {"cards": game.get_cards()}
     else:
@@ -348,14 +345,14 @@ async def get_cards(
             detail="You're not allowed to do this", status_code=405)
 
 
-@ router.put("/{room_name}/discard", tags=["Game"], status_code=status.HTTP_201_CREATED)
+@router.put("/{room_name}/discard", tags=["Game"], status_code=status.HTTP_201_CREATED)
 async def discard(body: DiscardRequest,
                   room_name: str = Path(
                       ...,
                       min_length=6,
                       max_length=20,
                   ),
-                  email: str = Depends(valid_credentials)):
+                  username: str = Depends(get_username_from_token)):
 
     """
     Endpoint used for discarding a card, both by minister and director.
@@ -364,11 +361,11 @@ async def discard(body: DiscardRequest,
     you want to discard (as returned by the /cards endpoint)
     """
 
-    room = check_game_preconditions(email, room_name, hub)
+    room = check_game_preconditions(username, room_name, hub)
 
     game = room.get_game()
     phase = game.get_phase()
-    if (phase == GamePhase.MINISTER_DISCARD and game.get_minister_user() == email):
+    if (phase == GamePhase.MINISTER_DISCARD and game.get_minister_user() == username):
         if (body.card_index not in [0, 1, 2]):
             raise HTTPException(
                 detail="Index out of bounds", status_code=400)
@@ -377,7 +374,7 @@ async def discard(body: DiscardRequest,
         game.set_phase(GamePhase.DIRECTOR_DISCARD)
         return {"message": "Successfully discarded"}
 
-    elif (phase == GamePhase.DIRECTOR_DISCARD and game.get_director_user() == email):
+    elif (phase == GamePhase.DIRECTOR_DISCARD and game.get_director_user() == username):
         if (body.card_index not in [0, 1]):
             raise HTTPException(
                 detail="Index out of bounds", status_code=400)
@@ -391,16 +388,16 @@ async def discard(body: DiscardRequest,
             detail="You're not allowed to do this", status_code=405)
 
 
-@ router.get("/{room_name}/cast/divination", tags=["Game"], status_code=status.HTTP_200_OK)
+@router.get("/{room_name}/cast/divination", tags=["Game"], status_code=status.HTTP_200_OK)
 async def cast_divination(room_name: str = Path(..., min_length=6, max_length=20),
-                          email: str = Depends(valid_credentials)):
+                          username: str = Depends(get_username_from_token)):
 
-    room = check_game_preconditions(email, room_name, hub)
+    room = check_game_preconditions(username, room_name, hub)
 
     game = room.get_game()
     phase = game.get_phase()
     minister = game.get_minister_user()
-    if (phase == GamePhase.CAST_DIVINATION and email == minister):
+    if (phase == GamePhase.CAST_DIVINATION and username == minister):
         return {"cards": game.divination()}
     else:
         raise HTTPException(
@@ -409,14 +406,14 @@ async def cast_divination(room_name: str = Path(..., min_length=6, max_length=20
 
 @router.put("/{room_name}/cast/confirm_divination", tags=["Game"], status_code=status.HTTP_200_OK)
 async def confirm_divination(room_name: str = Path(..., min_length=6, max_length=20),
-                             email: str = Depends(valid_credentials)):
-    room = check_game_preconditions(email, room_name, hub)
+                             username: str = Depends(get_username_from_token)):
+    room = check_game_preconditions(username, room_name, hub)
 
     game = room.get_game()
     phase = game.get_phase()
     minister = game.get_minister_user()
 
-    if (phase == GamePhase.CAST_DIVINATION and email == minister):
+    if (phase == GamePhase.CAST_DIVINATION and username == minister):
         game.restart_turn()
         return {"message": "Divination confirmed, moving on"}
     else:
@@ -424,18 +421,18 @@ async def confirm_divination(room_name: str = Path(..., min_length=6, max_length
             detail="You're not allowed to do this", status_code=405)
 
 
-@ router.put("/{room_name}/cast/avada-kedavra", tags=["Game"], status_code=status.HTTP_200_OK)
+@router.put("/{room_name}/cast/avada-kedavra", tags=["Game"], status_code=status.HTTP_200_OK)
 async def cast_avada_kedavra(body: TargetedSpellRequest,
                              room_name: str = Path(...,
                                                    min_length=6, max_length=20),
-                             email: str = Depends(valid_credentials)):
+                             username: str = Depends(get_username_from_token)):
 
-    room = check_game_preconditions(email, room_name, hub)
+    room = check_game_preconditions(username, room_name, hub)
 
     game = room.get_game()
     phase = game.get_phase()
     minister = game.get_minister_user()
-    if (phase == GamePhase.CAST_AVADA_KEDAVRA and email == minister):
+    if (phase == GamePhase.CAST_AVADA_KEDAVRA and username == minister):
         if body.target_email not in game.get_current_players():
             raise HTTPException(detail="Player not found", status_code=404)
         elif body.target_email not in game.get_alive_players():

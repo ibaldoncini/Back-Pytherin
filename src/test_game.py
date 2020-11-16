@@ -2,202 +2,157 @@ from fastapi.testclient import TestClient
 from pony.orm import db_session, commit
 from api.models.base import db
 from test_main import test_app
+from test_setup import p, start_game, emails, vote
 
 client = TestClient(test_app)
 
 
-def create_and_login(email: str):
-    client.post(
-        "/users/register",
-        json={
-            "username": email.split('@')[0],
-            "email": email,
-            "password": "Heladera65",
-            "icon": "string",
-        })
-    response_login = client.post(
-        "/users",
-        data={
-            "grant_type": "",
-            "username": email,
-            "password": "Heladera65",
-            "scope": "",
-            "client_id": "",
-            "client_secret": "",
-        },
-    )
-    assert response_login.status_code == 200
-    rta: dict = response_login.json()
-    token: str = rta["access_token"]
-    token_type: str = "Bearer "
-    head: str = token_type + token
-    with db_session:
-        try:
-            user = db.DB_User.get(email=email)
-            user.set(email_confirmed=True)
-            commit()
-        except:
-            pass
-
-    return {"accept": "test_application/json", "Authorization": head}
-
-
-def join(header, room_name: str):
-    client.get(
-        f"/room/join/{room_name}",
-        headers=header,
-    )
-
-
-owner = create_and_login("room_owner@email.com")
-p1 = create_and_login("player1@email.com")
-p2 = create_and_login("player2@email.com")
-p3 = create_and_login("player3@email.com")
-p4 = create_and_login("player4@email.com")
-
-client.post(
-    "/room/new",
-    headers=owner,
-    json={"name": "pytherin", "max_players": "5"}
-)
-
-join(owner, "pytherin")
-join(p1, "pytherin")
-join(p2, "pytherin")
-join(p3, "pytherin")
-join(p4, "pytherin")
-
+# def test_start_and_first_round():
 response_get_pregame = client.get(
     "/pytherin/game_state",
-    headers=p1
+    headers=p[0]
 )
 assert response_get_pregame.status_code == 200
-print(response_get_pregame.json())
 
-response_start = client.put(
-    "/pytherin/start",
-    headers=owner
-)
+start_game(p[0], "pytherin")
 
-response_get_ingame = client.get(
-    "/pytherin/game_state",
-    headers=p1
-)
-
-print(response_get_ingame.json())
-
-assert response_start.status_code == 201
-
-players = [owner, p1, p2, p3, p4]
-
-director_email = "player1@email.com"
-minister_email = None
-
-for player in range(0, 5):
-    response = client.put(
-        "pytherin/director",
-        json={"director_email": director_email},
-        headers=players[player]
+we_have_voldemort = False
+while not we_have_voldemort:
+    j = 0
+    response_get_pregame = client.get(
+        "/pytherin/game_state",
+        headers=p[j]
     )
-    if response.status_code == 201:
-        print("Minister: p" + str(player))
-        print("Director: " + "p1")
+    rta: dict = response_get_pregame.json()
+    voldemort_email = rta["voldemort"]
+    if voldemort_email != "":
+        we_have_voldemort = True
+
+
+round_count = 0
+game_is_not_over = True
+de_score = 0
+fo_score = 0
+divination_casted = False
+avadas_avaliables = 2
+
+while game_is_not_over:
+    round_count += 1
+    response_get_ingame = client.get(
+        "/pytherin/game_state",
+        headers=p[0]
+    )
+    assert response_get_ingame.status_code == 200
+
+    rta: dict = response_get_ingame.json()
+    print(f"\nStart of round {round_count}")
+    print(rta)
+    minister_email: str = rta["minister"]
+    minister_index = emails.index(minister_email)
+    director_index = (minister_index + 1) % 5
+    director_email: str = emails[director_index]
+
+    respone_propose = client.put(
+        "/pytherin/director",
+        json={"director_email": director_email},
+        headers=p[minister_index]
+    )
+    assert respone_propose.status_code == 201
+
+    for i in range(0, 5):
+        if (i % 2):
+            response = vote(header=p[i], vote="Nox", room_name="pytherin")
+        else:
+            response = vote(header=p[i], vote="Lumos", room_name="pytherin")
+        assert response.status_code == 200
+
+    response_get_ingame2 = client.get(
+        "/pytherin/game_state",
+        headers=p[0]
+    )
+    assert response_get_ingame2.status_code == 200
+    print("\nAfter the voting")
+    print(response_get_ingame2.json())
+
+    if de_score >= 3 and voldemort_email == director_email:
+        # everything is fine, it checks out after the voting phase
+        game_is_not_over = False
         break
 
-response_get_ingame2 = client.get(
-    "/pytherin/game_state",
-    headers=p1
-)
-print("\n")
-print(response_get_ingame2.json())
-print("\n")
-""" 
-TESTED: 
-* Vote twice
-* invalid vote
-* Not in voting phase
-"""
-
-vote1 = client.put(
-    "/pytherin/vote",
-    headers=p1,
-    json={
-        'vote': "Lumos"
-    })
-
-vote2 = client.put(
-    "/pytherin/vote",
-    headers=p2,
-    json={
-        "vote": "Lumos"
-    })
-vote3 = client.put(
-    "/pytherin/vote",
-    headers=p3,
-    json={
-        "vote": "Nox"
-    })
-vote4 = client.put(
-    "/pytherin/vote",
-    headers=p4,
-    json={
-        "vote": "Nox"
-    })
-vote5 = client.put(
-    "/pytherin/vote",
-    headers=owner,
-    json={
-        "vote": "Lumos"
-    })
-
-
-assert vote1.status_code == 200
-assert vote2.status_code == 200
-assert vote3.status_code == 200
-assert vote4.status_code == 200
-assert vote5.status_code == 200
-
-response_get_ingame = client.get(
-    "/pytherin/game_state",
-    headers=p2
-)
-
-for player in range(0, 5):
-    response = client.get(
+    response_get_cards1 = client.get(
         "pytherin/cards",
-        headers=players[player]
+        headers=p[minister_index]
     )
-    print(response.json())
+    assert response_get_cards1.status_code == 200
 
-
-for player in range(0, 5):
-    response = client.put(
+    response_discard1 = client.put(
         "pytherin/discard",
         json={"card_index": 0},
-        headers=players[player]
+        headers=p[minister_index]
     )
-    print(response.json())
+    assert response_discard1.status_code == 201
 
-
-for player in range(0, 5):
-    response = client.get(
+    response_get_cards2 = client.get(
         "pytherin/cards",
-        headers=players[player]
+        headers=p[director_index]
     )
-    print(response.json())
+    assert response_get_cards2.status_code == 200
 
-
-for player in range(0, 5):
-    response = client.put(
+    response_discard2 = client.put(
         "pytherin/discard",
         json={"card_index": 0},
-        headers=players[player]
+        headers=p[director_index]
     )
-    print(response.json())
+    assert response_discard2.status_code == 201
 
-response_get_postr1 = client.get(
-    "/pytherin/game_state",
-    headers=p2
-)
+    response_post_proclamation = client.get(
+        "/pytherin/game_state",
+        headers=p[0]
+    )
+    assert response_post_proclamation.status_code == 200
+    scores_state: dict = response_post_proclamation.json()
+    de_score = scores_state["de_procs"]
+    fo_score = scores_state["fo_procs"]
 
-print(response_get_postr1.json())
+    if de_score == 6 or fo_score == 5:
+        game_is_not_over = False
+        break
+    else:
+        pass
+
+    if de_score == 3:
+        response_cast_divination = client.get(
+            "/pytherin/cast/divination",
+            headers=p[minister_index]
+        )
+        if not divination_casted:
+            assert response_cast_divination.status_code == 200
+            print("\n Next 3 cards:")
+            print(response_cast_divination.json())
+        else:
+            assert response_cast_divination.status_code == 405
+
+        response_confirm_divination = client.put(
+            "/pytherin/cast/confirm_divination",
+            headers=p[minister_index]
+        )
+        if not divination_casted:
+            assert response_confirm_divination.status_code == 200
+        else:
+            assert response_confirm_divination.status_code == 405
+
+        divination_casted = True
+
+    if (de_score == 4 or de_score == 5) and avadas_avaliables >= 1:
+        victim_index = (minister_index - 1) % 5
+        victim_email = emails[victim_index]
+        response_cast_avada = client.put(
+            "/pytherin/cast/avada-kedavra",
+            headers=p[minister_index],
+            json={"target_email": victim_email}
+        )
+        assert response_cast_avada.status_code == 200
+        print(response_cast_avada.json())
+        avadas_avaliables -= 1
+
+    print("--------------------------------------------------")

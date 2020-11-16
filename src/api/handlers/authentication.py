@@ -49,6 +49,17 @@ def valid_credentials(token: str = Depends(oauth2_scheme)):
     return email
 
 
+def get_username_from_token(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        uname: str = payload.get("username")
+        if uname is None:
+            return None
+    except JWTError:
+        return None
+    return uname
+
+
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:

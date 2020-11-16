@@ -22,7 +22,8 @@ def register(email: str):
             user = db.DB_User.get(email=email)
             user.set(email_confirmed=True)
             commit()
-        except:
+        except Exception as e:
+            print(e)
             pass
     pass
 
@@ -64,34 +65,35 @@ def join(header, room_name: str):
 
 
 def start_game(owner, room_name: str):
-    client.put(
+    response = client.put(
         f"/{room_name}/start",
         headers=owner
     )
+    return response
 
 
-register("player0@example.com")
-register("player1@example.com")
-register("player2@example.com")
-register("player3@example.com")
-register("player4@example.com")
+def vote(header: str, vote: str, room_name: str):
+    response = client.put(
+        f"/{room_name}/vote",
+        headers=header,
+        json={
+            "vote": vote
+        }
+    )
+    return response
 
 
 p = []
-p.append(login("player0@example.com"))
-p.append(login("player1@example.com"))
-p.append(login("player2@example.com"))
-p.append(login("player3@example.com"))
-p.append(login("player4@example.com"))
-# p.append(login("player5@example.com"))
-# p.append(login("player6@example.com"))
-# p.append(login("player7@example.com"))
-# p.append(login("player8@example.com"))
-# p.append(login("player9@example.com"))
+emails = []
+for i in range(0, 5):
+    emails.append(f"player{i}")
+    # print(f"player{i}@example.com")
+    register(f"player{i}@example.com")
+    p.append(login(f"player{i}@example.com"))
 
 create(p[0], "pytherin")
+join(p[0], "pytherin")
 join(p[1], "pytherin")
 join(p[2], "pytherin")
 join(p[3], "pytherin")
 join(p[4], "pytherin")
-start_game(p[0], "pytherin")
