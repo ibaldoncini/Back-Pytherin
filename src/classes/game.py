@@ -2,6 +2,7 @@ from enum import Enum
 from random import sample, choice
 from typing import Dict, List
 from collections import Counter
+from datetime import datetime
 
 from classes.player import Player
 from classes.board import Board
@@ -31,6 +32,7 @@ class Game:
         self.phase: GamePhase = GamePhase.PROPOSE_DIRECTOR
         self.cards: List[Card] = self.deck.take_3_cards()
         self.votes: Dict[str, Vote] = dict()
+        self.last_update = datetime.now()
 
     def init_players(self, users: List[str]):
         # Create empty players
@@ -101,7 +103,10 @@ class Game:
 
         self.deck.load_deck(json["deck_cards"])
         # Maybe set phase using the phase field in the json?
-        self.set_phase(GamePhase.VOTE_DIRECTOR)
+        if json["phase"] == GamePhase.PROPOSE_DIRECTOR.value:
+            self.set_phase(GamePhase.PROPOSE_DIRECTOR)
+        elif json["phase"] == GamePhase.VOTE_DIRECTOR.value:
+            self.set_phase(GamePhase.VOTE_DIRECTOR)
 
     def get_minister_user(self):
         if self.minister is None:
@@ -212,6 +217,7 @@ class Game:
         return self.phase
 
     def set_phase(self, phase: GamePhase):
+        self.last_update = datetime.now()
         self.phase = phase
 
     def compute_votes(self):
@@ -260,7 +266,6 @@ class Game:
 
     def divination(self):
         top_three = self.cards
-        self.restart_turn()
 
         return top_three
 

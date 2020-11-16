@@ -1,5 +1,6 @@
 from typing import List
 from enum import Enum, unique
+from datetime import datetime
 
 from classes.game import Game
 from classes.game_status_enum import GamePhase
@@ -43,13 +44,16 @@ class Room:
         if self.is_open():
             self.users.append(user)
 
+        if self.owner is None:
+            self.owner = user
+
     def is_open(self):
         """
         Returns true when a user can join, false otherwise
         """
         return len(self.users) < self.max_players and self.status == RoomStatus.PREGAME
 
-    def user_leave(self, user: str):
+    async def user_leave(self, user: str):
         """
         Removes a user from the current users list.
         Then passes ownership or removes the room from the hub if necessary
@@ -59,7 +63,7 @@ class Room:
             # WIP
             # server.remove_room(self) -> remove myself from hub
             # del self -> destroy myself
-            pass
+            self.owner = None
         elif self.owner == user:
             self.owner = self.users[0]
 
@@ -120,3 +124,10 @@ class Room:
         else:
             json = {}
         return json
+
+    def get_last_update(self):
+        time = datetime.now()
+        if self.game is not None:
+            time = self.game.last_update
+
+        return time
