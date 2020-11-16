@@ -25,9 +25,6 @@ while not we_know_who_voldemort_is:
     )
     rta: dict = response_get_pregame.json()
     voldemort_uname = rta["voldemort"]
-    print(voldemort_uname)
-    print(j)
-    j = j + 1
     if voldemort_uname != "":
         we_know_who_voldemort_is = True
     else:

@@ -120,6 +120,7 @@ class Game:
         new_index = (index + 1) % self.n_of_players
         while not is_alive:
             if self.players[new_index].is_player_alive():
+                is_alive = True
                 return self.players[new_index]
             else:
                 new_index = (index + 1) % self.n_of_players
