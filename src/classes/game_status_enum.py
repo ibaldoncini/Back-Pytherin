@@ -11,8 +11,8 @@ class GamePhase(Enum):
     DIRECTOR_DISCARD = auto()  # 4
     DE_WON = auto()  # 5
     FO_WON = auto()  # 6
-    CAST_DIVINATION = auto()
-    CAST_AVADA_KEDAVRA = auto()
+    CAST_DIVINATION = auto() #7
+    CAST_AVADA_KEDAVRA = auto() #8
 
     def __str__(self):
         return self.name

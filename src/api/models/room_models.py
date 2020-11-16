@@ -27,6 +27,8 @@ class DiscardRequest(BaseModel):
     card_index: int = Field(..., ge=0, le=2,
                             description="The index of the card to be discarded")
 
+# TODO NOW WITH USERNAMES
+
 
 class ProposeDirectorRequest(BaseModel):
     """
