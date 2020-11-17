@@ -210,14 +210,18 @@ class Game:
         voldemort = next(p for p in self.players if p.is_voldemort())
         return voldemort.get_user()
 
-    def get_votes(self):
-        if (len(self.get_alive_players()) == len(self.votes)
-                and self.phase == GamePhase.VOTE_DIRECTOR):
+    #option : This parameter is neceessary to check if a player
+    #has already voted.
+    def get_votes(self,option = False):
+        #Not sure if the parentheses are necessary
+        if ((len(self.get_alive_players()) == len(self.votes)
+            and self.phase == GamePhase.VOTE_DIRECTOR) or option):
             return self.votes
         return {}
 
-    def register_vote(self, vote, email):
-        self.votes[email] = vote
+    def register_vote(self, vote, uname : str):
+        #self.votes[uname] = vote
+        self.votes.update({uname : vote})
 
     def get_phase(self):
         return self.phase
