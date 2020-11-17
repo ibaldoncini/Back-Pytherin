@@ -9,7 +9,7 @@ client = TestClient(test_app)
 
 
 def register(email: str):
-    client.post(
+    response = client.post(
         "/users/register",
         json={
             "username": email.split('@')[0],
@@ -25,7 +25,7 @@ def register(email: str):
         except Exception as e:
             print(e)
             pass
-    pass
+    return response
 
 
 def login(email: str):
@@ -91,9 +91,12 @@ for i in range(0, 5):
     register(f"player{i}@example.com")
     p.append(login(f"player{i}@example.com"))
 
-create(p[0], "pytherin")
-join(p[0], "pytherin")
-join(p[1], "pytherin")
-join(p[2], "pytherin")
-join(p[3], "pytherin")
-join(p[4], "pytherin")
+assert register("player1@example.com").status_code == 409
+
+
+create(p[0], "test-game")
+join(p[0], "test-game")
+join(p[1], "test-game")
+join(p[2], "test-game")
+join(p[3], "test-game")
+join(p[4], "test-game")

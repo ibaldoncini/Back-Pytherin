@@ -102,8 +102,8 @@ def test_bad_json():
     assert response2.status_code == 422
 
 
-# test login and mail good path (htest_appy path)
-def test_htest_appy_path():
+# test login and mail good path (test_happy path)
+def test_test_happy_path():
 
     response = client.get(
         "/room/join/1stroom",
@@ -120,8 +120,8 @@ def test_user_already_in():
         "/room/join/1stroom",
         headers={"accept": "test_application/json", "Authorization": head},
     )
-    assert response.status_code == 409
-    assert response.json() == {"detail": "You are already in this room"}
+    assert response.status_code == 200
+    assert response.json() == {"message": "Joined 1stroom"}
 
 
 def test_room_not_open():

@@ -4,41 +4,37 @@ from test_main import test_app
 client = TestClient(test_app)
 
 
-def test_register_valid_user():
-    response = client.post("users/register",
-                           json={
-                               "username": "Chuls",
-                               "email": "thejipi999@gmail.com",
-                               "password": "Chacarita1",
-                               "icon": "string"
-                           })
-    assert response.status_code == 201
+# def test_register_valid_user():
+#    response = client.post("users/register",
+#                           json={
+#                               "username": "Chuls",
+#                               "email": "thejipi999@gmail.com",
+#                               "password": "Chacarita1",
+#                               "icon": "string"
+#                           })
+#    assert response.status_code == 201
 
 
-def test_register_already_registered_username():
-    response = client.post("users/register",
-                           json={
-                               "username": "Chuls",
-                               "email": "jramosp@gmail.com",
-                               "password": "Chacarita1",
-                               "icon": "string"
-                           })
-    assert response.status_code == 409
+# def test_register_already_registered_username():
+#    response = client.post("users/register",
+#                           json={
+#                               "username": "Chuls",
+#                               "email": "jramosp@gmail.com",
+#                               "password": "Chacarita1",
+#                               "icon": "string"
+#                           })
+#    assert response.status_code == 409
 
 
-def test_register_already_registered_email():
-    response = client.post("users/register",
-                           json={
-                               "username": "Shulsss",
-                               "email": "thejipi999@gmail.com",
-                               "password": "Chacarita1",
-                               "icon": "string"
-                           })
-    assert response.status_code == 409
-
-
-def users_dump():
-    return client.get("users/")
+# def test_register_already_registered_email():
+#    response = client.post("users/register",
+#                           json={
+#                               "username": "Shulsss",
+#                               "email": "thejipi999@gmail.com",
+#                               "password": "Chacarita1",
+#                               "icon": "string"
+#                           })
+#    assert response.status_code == 409
 
 
 def test_post_invalid_username_user():
@@ -138,17 +134,3 @@ def test_post_user_no_password():
                                "icon": "string"
                            })
     assert response.status_code == 422
-
-
-test_register_valid_user()
-test_post_user_no_password()
-test_post_user_no_email()
-test_post_user_no_username()
-test_post_invalid_password_user3()
-test_post_invalid_password_user2()
-test_post_invalid_password_user()
-test_post_invalid_email_user()
-test_post_invalid_username_user2()
-test_post_invalid_username_user()
-test_register_already_registered_email()
-test_register_already_registered_username()
