@@ -35,6 +35,8 @@ class Game:
         self.votes: Dict[str, Vote] = dict()
         self.last_update = datetime.now()
         self.casted_imperius_by: Player = None
+        self.chaos_counter : int = 0
+
 
     def init_players(self, users: List[str]):
         # Create empty players
@@ -239,6 +241,24 @@ class Game:
         self.last_update = datetime.now()
         self.phase = phase
 
+    
+    def proc_top_card (self):
+        card = self.deck.take_card()
+        self.board.proclaim(card)
+
+
+    def get_chaos (self):
+        return self.chaos_counter
+
+
+    def set_chaos (self,n = 0):
+        self.chaos_counter = n
+
+    
+    def increase_chaos (self):
+        self.chaos_counter += 1
+
+
     async def compute_votes(self):
         votes = Counter(self.votes.values())
         lumos_count = votes['Lumos']
@@ -252,13 +272,20 @@ class Game:
                 self.set_phase(GamePhase.MINISTER_DISCARD)
         else:
             self.set_director(None)
+            self.increase_chaos()
             self.restart_turn()
+
 
     def proc_leftover_card(self):
         card = self.cards.pop(0)
         self.board.proclaim(card)
         self.deal_cards()
         self.executive_phase()
+
+    
+    def get_top_card(self):
+        return self.deck[0]
+
 
     def restart_turn(self):
         self.last_director = self.director
@@ -269,8 +296,10 @@ class Game:
 
         if self.board.get_de_procs() >= 6:
             self.set_phase(GamePhase.DE_WON)
-        elif (self.board.get_fo_procs() >= 5 or not voldemort.is_player_alive()):
+        elif self.board.get_fo_procs() >= 5 or not voldemort.is_player_alive():
             self.set_phase(GamePhase.FO_WON)
+        elif self.chaos_counter == 3:
+            self.set_phase(GamePhase.CHAOS)
         else:
             self.set_phase(GamePhase.PROPOSE_DIRECTOR)
 
