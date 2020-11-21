@@ -198,14 +198,15 @@ async def get_game_state(
         game = room.get_game()
         my_role = game.get_player_role(username)
 
-        if ((game.get_nof_players < 7 and
+        if ((game.get_nof_players() < 7 and
              (my_role == Role.DEATH_EATER or my_role == Role.VOLDEMORT))
                 or room.status == RoomStatus.FINISHED):
             de_list = game.get_de_list()
             voldemort = game.get_voldemort()
-        elif ((game.get_nof_players <= 10 and
+        elif ((game.get_nof_players() <= 10 and
                (my_role == Role.DEATH_EATER)) or room.status == RoomStatus.FINISHED):
             de_list = game.get_de_list()
+            voldemort = game.get_voldemort()
         else:
             de_list = []
             voldemort = ""
@@ -456,20 +457,20 @@ async def cast_avada_kedavra(body: TargetedSpellRequest,
     phase = game.get_phase()
     minister = game.get_minister_user()
     if (phase == GamePhase.CAST_AVADA_KEDAVRA and username == minister):
-        if body.target_ not in game.get_current_players():
+        if body.target_uname not in game.get_current_players():
             raise HTTPException(detail="Player not found", status_code=404)
-        elif body.target_ not in game.get_alive_players():
+        elif body.target_uname not in game.get_alive_players():
             raise HTTPException(
                 detail="Player is already dead", status_code=409)
         else:
-            game.avada_kedavra(body.target_)
+            game.avada_kedavra(body.target_uname)
             return {"message": "Successfully casted Avada Kedavra"}
     else:
         raise HTTPException(
             detail="You're not allowed to do this", status_code=405)
 
 
-@ router.get("/{room_name}/cast/imperio", tags=["Spells"], status_code=status.HTTP_200_OK)
+@ router.put("/{room_name}/cast/imperio", tags=["Spells"], status_code=status.HTTP_200_OK)
 async def cast_crucio(body: TargetedSpellRequest,
                       room_name: str = Path(...,
                                             min_length=6, max_length=20),
@@ -480,7 +481,20 @@ async def cast_crucio(body: TargetedSpellRequest,
     phase = game.get_phase()
     minister = game.get_minister_user()
 
-    return {}
+    return {"message": "Successfully casted Imperio"}
+
+
+@ router.put("/{room_name}/cast/confirm_crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
+async def confirm_crucio(room_name: str = Path(..., min_length=6, max_length=20),
+                         username: str = Depends(get_username_from_token)):
+
+    room = check_game_preconditions(username, room_name, hub)
+
+    game = room.get_game()
+    phase = game.get_phase()
+    minister = game.get_minister_user()
+
+    return {"message": "Successfully casted cCrucio"}
 
 
 @ router.put("/{room_name}/cast/crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
@@ -494,4 +508,4 @@ async def cast_imperio(body: TargetedSpellRequest,
     phase = game.get_phase()
     minister = game.get_minister_user()
 
-    return {}
+    return {"message": "Successfully casted Crucio"}
