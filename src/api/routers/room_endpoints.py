@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Path
 from fastapi_utils.tasks import repeat_every
-from api.models.room_models import *
+from datetime import datetime, timedelta
+
+from api.models.room_models import VoteRequest, RoomCreationRequest, TargetedSpellRequest, ProposeDirectorRequest, DiscardRequest
 from api.handlers.authentication import valid_credentials, get_username_from_token
 from api.handlers.game_checks import check_game_preconditions
 from api.utils.room_utils import check_email_status, votes_to_json
-from datetime import datetime, timedelta
 
 from classes.room import Room, RoomStatus
 from classes.room_hub import RoomHub
@@ -87,7 +88,7 @@ async def join_room(
     Possible respones:\n
             200 when succesfully joined.
             401 when not logged in.
-            403 when email not confirmed.
+            403 when email not confirmed or room is full.
             404 when the room doesn't exist.
             409 when the user is already in the room.
             403 when the room is full or in-game.
@@ -197,11 +198,14 @@ async def get_game_state(
         game = room.get_game()
         my_role = game.get_player_role(username)
 
-        if (my_role == Role.DEATH_EATER or my_role == Role.VOLDEMORT or room.status == RoomStatus.FINISHED):
+        if ((game.get_nof_players < 7 and
+             (my_role == Role.DEATH_EATER or my_role == Role.VOLDEMORT))
+                or room.status == RoomStatus.FINISHED):
             de_list = game.get_de_list()
             voldemort = game.get_voldemort()
-            # In next sprints, we need to check who is voldemort
-            # and then show them the de_list
+        elif ((game.get_nof_players <= 10 and
+               (my_role == Role.DEATH_EATER)) or room.status == RoomStatus.FINISHED):
+            de_list = game.get_de_list()
         else:
             de_list = []
             voldemort = ""
@@ -224,7 +228,7 @@ async def get_game_state(
         return json_r
 
 
-@router.put("/{room_name}/start", tags=["Game"], status_code=status.HTTP_201_CREATED)
+@ router.put("/{room_name}/start", tags=["Game"], status_code=status.HTTP_201_CREATED)
 async def start_game(
         room_name: str = Path(
             ...,
@@ -255,7 +259,7 @@ async def start_game(
         return {"message": "Succesfully started"}
 
 
-@router.put("/{room_name}/director", tags=["Game"], status_code=status.HTTP_201_CREATED)
+@ router.put("/{room_name}/director", tags=["Game"], status_code=status.HTTP_201_CREATED)
 async def propose_director(body: ProposeDirectorRequest,
                            room_name: str = Path(
                                ...,
@@ -272,15 +276,15 @@ async def propose_director(body: ProposeDirectorRequest,
     phase = game.get_phase()
     minister = game.get_minister_user()
     if (phase == GamePhase.PROPOSE_DIRECTOR and minister == username):
-        if body.director_email not in game.get_current_players():
+        if body.director_uname not in game.get_current_players():
             raise HTTPException(
                 status_code=404, detail="Player not found")
-        elif (body.director_email == game.get_last_director_user()
-              or minister == body.director_email):
+        elif (body.director_uname == game.get_last_director_user()
+              or minister == body.director_uname):
             raise HTTPException(
                 status_code=403, detail="That player cannot be the director this round")
         else:
-            game.set_director(body.director_email)
+            game.set_director(body.director_uname)
             game.set_phase(GamePhase.VOTE_DIRECTOR)
             await save_game_on_database(room)
             return {"message": "Director proposed successfully"}
@@ -290,7 +294,7 @@ async def propose_director(body: ProposeDirectorRequest,
             detail="You're not allowed to do this", status_code=405)
 
 
-@router.put("/{room_name}/vote", tags=["Game"], status_code=status.HTTP_200_OK)
+@ router.put("/{room_name}/vote", tags=["Game"], status_code=status.HTTP_200_OK)
 async def vote(
         vote_req: VoteRequest,
         username: str = Depends(get_username_from_token),
@@ -331,7 +335,7 @@ async def vote(
     return {"message": "Succesfully voted!"}
 
 
-@router.get("/{room_name}/cards", tags=["Game"], status_code=status.HTTP_200_OK)
+@ router.get("/{room_name}/cards", tags=["Game"], status_code=status.HTTP_200_OK)
 async def get_cards(
     room_name: str = Path(
         ...,
@@ -363,7 +367,7 @@ async def get_cards(
             detail="You're not allowed to do this", status_code=405)
 
 
-@router.put("/{room_name}/discard", tags=["Game"], status_code=status.HTTP_201_CREATED)
+@ router.put("/{room_name}/discard", tags=["Game"], status_code=status.HTTP_201_CREATED)
 async def discard(body: DiscardRequest,
                   room_name: str = Path(
                       ...,
@@ -406,7 +410,7 @@ async def discard(body: DiscardRequest,
             detail="You're not allowed to do this", status_code=405)
 
 
-@router.get("/{room_name}/cast/divination", tags=["Game"], status_code=status.HTTP_200_OK)
+@ router.get("/{room_name}/cast/divination", tags=["Spells"], status_code=status.HTTP_200_OK)
 async def cast_divination(room_name: str = Path(..., min_length=6, max_length=20),
                           username: str = Depends(get_username_from_token)):
 
@@ -422,7 +426,7 @@ async def cast_divination(room_name: str = Path(..., min_length=6, max_length=20
             detail="You're not allowed to do this", status_code=405)
 
 
-@router.put("/{room_name}/cast/confirm_divination", tags=["Game"], status_code=status.HTTP_200_OK)
+@ router.put("/{room_name}/cast/confirm_divination", tags=["Spells"], status_code=status.HTTP_200_OK)
 async def confirm_divination(room_name: str = Path(..., min_length=6, max_length=20),
                              username: str = Depends(get_username_from_token)):
 
@@ -440,7 +444,7 @@ async def confirm_divination(room_name: str = Path(..., min_length=6, max_length
             detail="You're not allowed to do this", status_code=405)
 
 
-@router.put("/{room_name}/cast/avada-kedavra", tags=["Game"], status_code=status.HTTP_200_OK)
+@ router.put("/{room_name}/cast/avada-kedavra", tags=["Spells"], status_code=status.HTTP_200_OK)
 async def cast_avada_kedavra(body: TargetedSpellRequest,
                              room_name: str = Path(...,
                                                    min_length=6, max_length=20),
@@ -452,14 +456,42 @@ async def cast_avada_kedavra(body: TargetedSpellRequest,
     phase = game.get_phase()
     minister = game.get_minister_user()
     if (phase == GamePhase.CAST_AVADA_KEDAVRA and username == minister):
-        if body.target_email not in game.get_current_players():
+        if body.target_ not in game.get_current_players():
             raise HTTPException(detail="Player not found", status_code=404)
-        elif body.target_email not in game.get_alive_players():
+        elif body.target_ not in game.get_alive_players():
             raise HTTPException(
                 detail="Player is already dead", status_code=409)
         else:
-            game.avada_kedavra(body.target_email)
+            game.avada_kedavra(body.target_)
             return {"message": "Successfully casted Avada Kedavra"}
     else:
         raise HTTPException(
             detail="You're not allowed to do this", status_code=405)
+
+
+@ router.get("/{room_name}/cast/imperio", tags=["Spells"], status_code=status.HTTP_200_OK)
+async def cast_crucio(body: TargetedSpellRequest,
+                      room_name: str = Path(...,
+                                            min_length=6, max_length=20),
+                      username: str = Depends(get_username_from_token)):
+    room = check_game_preconditions(username, room_name, hub)
+
+    game = room.get_game()
+    phase = game.get_phase()
+    minister = game.get_minister_user()
+
+    return {}
+
+
+@ router.put("/{room_name}/cast/crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
+async def cast_imperio(body: TargetedSpellRequest,
+                       room_name: str = Path(...,
+                                             min_length=6, max_length=20),
+                       username: str = Depends(get_username_from_token)):
+    room = check_game_preconditions(username, room_name, hub)
+
+    game = room.get_game()
+    phase = game.get_phase()
+    minister = game.get_minister_user()
+
+    return {}

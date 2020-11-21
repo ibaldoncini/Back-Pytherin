@@ -27,15 +27,13 @@ class DiscardRequest(BaseModel):
     card_index: int = Field(..., ge=0, le=2,
                             description="The index of the card to be discarded")
 
-# TODO NOW WITH USERNAMES
-
 
 class ProposeDirectorRequest(BaseModel):
     """
     Body of the request used for proposing a director.
     Used by minister only.
     """
-    director_email: str = Field(...,
+    director_uname: str = Field(...,
                                 description="The email of the user to be proposed as director")
 
 
@@ -43,5 +41,5 @@ class TargetedSpellRequest(BaseModel):
     """
     Body of the request used for spells that are casted onto another player
     """
-    target_email: str = Field(...,
+    target_uname: str = Field(...,
                               description="The email of the user to receive the spell")

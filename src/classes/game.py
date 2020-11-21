@@ -129,6 +129,9 @@ class Game:
         new_minister_index = (last_minister_index + 1) % (len(alive_players))
         self.minister = alive_players[new_minister_index]
 
+    def get_nof_players(self):
+        return self.n_of_players
+
     def get_director_user(self):
         if self.director is None:
             return "Undefined"
@@ -210,18 +213,18 @@ class Game:
         voldemort = next(p for p in self.players if p.is_voldemort())
         return voldemort.get_user()
 
-    #option : This parameter is neceessary to check if a player
-    #has already voted.
-    def get_votes(self,option = False):
-        #Not sure if the parentheses are necessary
+    # option : This parameter is neceessary to check if a player
+    # has already voted.
+    def get_votes(self, option=False):
+        # Not sure if the parentheses are necessary
         if ((len(self.get_alive_players()) == len(self.votes)
-            and self.phase == GamePhase.VOTE_DIRECTOR) or option):
+             and self.phase == GamePhase.VOTE_DIRECTOR) or option):
             return self.votes
         return {}
 
-    def register_vote(self, vote, uname : str):
+    def register_vote(self, vote, uname: str):
         #self.votes[uname] = vote
-        self.votes.update({uname : vote})
+        self.votes.update({uname: vote})
 
     def get_phase(self):
         return self.phase
@@ -267,7 +270,7 @@ class Game:
             self.set_phase(GamePhase.PROPOSE_DIRECTOR)
 
     def executive_phase(self):
-        spell = self.board.spell_check()
+        spell = self.board.spell_check(self.n_of_players)
         if (spell == Spell.DIVINATION):
             self.set_phase(GamePhase.CAST_DIVINATION)
         elif (spell == Spell.AVADA_KEDAVRA):
