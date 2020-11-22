@@ -12,9 +12,17 @@ class Board:
 
     def init_spells(self, n_of_players: int):
         if n_of_players >= 9:
-            spell_dict = {}
+            spell_dict = {
+                Spell.DIVINATION: 0,
+                Spell.AVADA_KEDAVRA: 2,
+                Spell.IMPERIUS: 1,
+                Spell.CRUCIO: 2}
         elif n_of_players >= 7:
-            spell_dict = {}
+            spell_dict = {
+                Spell.DIVINATION: 0,
+                Spell.AVADA_KEDAVRA: 2,
+                Spell.IMPERIUS: 1,
+                Spell.CRUCIO: 1}
         else:
             spell_dict = {
                 Spell.DIVINATION: 1,
@@ -46,11 +54,22 @@ class Board:
         else:
             self.de_proclaims += 1
 
-    def spell_check(self):
+    def spell_check(self, nof_players: int):
+
         de_procs = self.get_de_procs()
-        if (de_procs == 3 and self.spells[Spell.DIVINATION] > 0):
+
+        if (nof_players <= 6 and de_procs == 3 and self.spells[Spell.DIVINATION] > 0):
             self.spells[Spell.DIVINATION] -= 1
             return Spell.DIVINATION
+        elif (nof_players >= 7 and de_procs == 3 and self.spells[Spell.IMPERIUS] > 0):
+            self.spells[Spell.IMPERIUS] -= 1
+            return Spell.IMPERIUS
+        elif (nof_players >= 7 and de_procs == 2 and self.spells[Spell.CRUCIO] > 0):
+            self.spells[Spell.CRUCIO] -= 1
+            return Spell.CRUCIO
+        elif (nof_players >= 9 and de_procs >= 1 and self.spells[Spell.CRUCIO] > 0):
+            self.spells[Spell.CRUCIO] -= 1
+            return Spell.CRUCIO
         elif ((de_procs == 4 and self.spells[Spell.AVADA_KEDAVRA] > 1)
                 or (de_procs == 5 and self.spells[Spell.AVADA_KEDAVRA] > 0)):
             self.spells[Spell.AVADA_KEDAVRA] -= 1

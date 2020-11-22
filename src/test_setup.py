@@ -49,19 +49,20 @@ def login(email: str):
     return {"accept": "application/json", "Authorization": head}
 
 
-def create(header, room_name: str):
+def create(header, room_name: str, nof_players: int):
     client.post(
         "/room/new",
         headers=header,
-        json={"name": f"{room_name}", "max_players": "5"}
+        json={"name": f"{room_name}", "max_players": f"{nof_players}"}
     )
 
 
 def join(header, room_name: str):
-    client.get(
+    response = client.get(
         f"/room/join/{room_name}",
         headers=header,
     )
+    return response
 
 
 def start_game(owner, room_name: str):
@@ -85,18 +86,22 @@ def vote(header: str, vote: str, room_name: str):
 
 p = []
 unames = []
-for i in range(0, 5):
+for i in range(0, 15):
     unames.append(f"player{i}")
-    # print(f"player{i}@example.com")
     register(f"player{i}@example.com")
     p.append(login(f"player{i}@example.com"))
 
 assert register("player1@example.com").status_code == 409
 
+create(p[0], "test-game-5", 5)
+for i in range(0, 5):
+    rta = join(p[i], "test-game-5")
 
-create(p[0], "test-game")
-join(p[0], "test-game")
-join(p[1], "test-game")
-join(p[2], "test-game")
-join(p[3], "test-game")
-join(p[4], "test-game")
+create(p[0], "test-game-8", 8)
+for i in range(0, 8):
+    rta = join(p[i], "test-game-8")
+
+
+create(p[0], "test-game-10", 10)
+for i in range(0, 10):
+    rta = join(p[i], "test-game-10")
