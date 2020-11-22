@@ -255,6 +255,15 @@ class Game:
         self.chaos_counter = n
 
     
+    async def do_chaos (self):
+        self.proc_top_card()
+        #To simplify things to front-end
+        await async_sleep(5)
+        self.set_chaos(0)
+        #Just decrease the spell number
+        self.board.spell_check()
+
+
     def increase_chaos (self):
         self.chaos_counter += 1
 
@@ -273,6 +282,8 @@ class Game:
         else:
             self.set_director(None)
             self.increase_chaos()
+            if self.get_chaos() == 3:
+                await self.do_chaos()
             self.restart_turn()
 
 
@@ -298,8 +309,6 @@ class Game:
             self.set_phase(GamePhase.DE_WON)
         elif self.board.get_fo_procs() >= 5 or not voldemort.is_player_alive():
             self.set_phase(GamePhase.FO_WON)
-        elif self.chaos_counter == 3:
-            self.set_phase(GamePhase.CHAOS)
         else:
             self.set_phase(GamePhase.PROPOSE_DIRECTOR)
 
