@@ -216,7 +216,6 @@ class Game:
     # option : This parameter is neceessary to check if a player
     # has already voted.
     def get_votes(self, option=False):
-        # Not sure if the parentheses are necessary
         if ((len(self.get_alive_players()) == len(self.votes)
              and self.phase == GamePhase.VOTE_DIRECTOR) or option):
             return self.votes
@@ -274,12 +273,13 @@ class Game:
             self.set_phase(GamePhase.CAST_DIVINATION)
         elif (spell == Spell.AVADA_KEDAVRA):
             self.set_phase(GamePhase.CAST_AVADA_KEDAVRA)
+        elif (spell == Spell.IMPERIUS):
+            self.set_phase(GamePhase.CAST_IMPERIUS)
         else:
             self.restart_turn()
 
     def divination(self):
         top_three = self.cards
-
         return top_three
 
     def avada_kedavra(self, target):
@@ -287,3 +287,23 @@ class Game:
             if target == player.get_user():
                 player.kill()
         self.restart_turn()
+
+    def imperius(self, target):
+        # TODO
+        """
+        Un "Imperius" no se salta a ningún
+        jugador. Después de que se lanza
+        una maldición Imperius, el cartel
+        del Ministro de Magia regresa al
+        lado izquierdo del Ministro de
+        Magia que promulgó la Elección
+        Especial.
+        """
+        for player in self.players:
+            if target == player.get_user():
+                self.last_director = self.director
+                self.director = None
+                self.last_minister = self.minister
+                self.minister = player
+                self.votes.clear()
+        self.set_phase(GamePhase.PROPOSE_DIRECTOR)

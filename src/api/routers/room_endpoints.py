@@ -470,7 +470,7 @@ async def cast_avada_kedavra(body: TargetedSpellRequest,
             detail="You're not allowed to do this", status_code=405)
 
 
-@ router.put("/{room_name}/cast/imperio", tags=["Spells"], status_code=status.HTTP_200_OK)
+@ router.put("/{room_name}/cast/crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
 async def cast_crucio(body: TargetedSpellRequest,
                       room_name: str = Path(...,
                                             min_length=6, max_length=20),
@@ -481,7 +481,7 @@ async def cast_crucio(body: TargetedSpellRequest,
     phase = game.get_phase()
     minister = game.get_minister_user()
 
-    return {"message": "Successfully casted Imperio"}
+    return {"message": "Successfully casted Crucio"}
 
 
 @ router.put("/{room_name}/cast/confirm_crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
@@ -497,15 +497,41 @@ async def confirm_crucio(room_name: str = Path(..., min_length=6, max_length=20)
     return {"message": "Successfully casted cCrucio"}
 
 
-@ router.put("/{room_name}/cast/crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
-async def cast_imperio(body: TargetedSpellRequest,
-                       room_name: str = Path(...,
-                                             min_length=6, max_length=20),
-                       username: str = Depends(get_username_from_token)):
+@ router.put("/{room_name}/cast/imperius", tags=["Spells"], status_code=status.HTTP_200_OK)
+async def cast_imperius(body: TargetedSpellRequest,
+                        room_name: str = Path(...,
+                                              min_length=6, max_length=20),
+                        username: str = Depends(get_username_from_token)):
+    room = check_game_preconditions(username, room_name, hub)
+
+    game = room.get_game()
+    phase = game.get_phase()
+    minister = game.get_minister_user()
+    if (phase == GamePhase.CAST_IMPERIUS and username == minister):
+        if body.target_uname not in game.get_current_players():
+            raise HTTPException(detail="Player not found", status_code=404)
+        elif body.target_uname not in game.get_alive_players():
+            raise HTTPException(
+                detail="Player is already dead", status_code=409)
+        elif body.target_uname == minister:
+            raise HTTPException(
+                detail="You cant choose yourself", status_code=409)
+        else:
+            game.imperius(body.target_uname)
+            return {"message": "Successfully casted Imperius"}
+    else:
+        raise HTTPException(
+            detail="You're not allowed to do this", status_code=405)
+
+
+@ router.put("/{room_name}/cast/expelliarmus", tags=["Spells"], status_code=status.HTTP_200_OK)
+async def cast_expelliarmus(room_name: str = Path(
+                            ..., min_length=6, max_length=20),
+                            username: str = Depends(get_username_from_token)):
     room = check_game_preconditions(username, room_name, hub)
 
     game = room.get_game()
     phase = game.get_phase()
     minister = game.get_minister_user()
 
-    return {"message": "Successfully casted Crucio"}
+    return {"message": "Successfully casted Expelliarmus"}

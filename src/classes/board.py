@@ -61,12 +61,12 @@ class Board:
         if (nof_players <= 6 and de_procs == 3 and self.spells[Spell.DIVINATION] > 0):
             self.spells[Spell.DIVINATION] -= 1
             return Spell.DIVINATION
-        elif (nof_players >= 7 and de_procs == 3 and self.spells[Spell.IMPERIUS] > 0):
-            self.spells[Spell.IMPERIUS] -= 1
-            return Spell.IMPERIUS
         elif (nof_players >= 7 and de_procs == 2 and self.spells[Spell.CRUCIO] > 0):
             self.spells[Spell.CRUCIO] -= 1
             return Spell.CRUCIO
+        elif (nof_players >= 7 and de_procs == 3 and self.spells[Spell.IMPERIUS] > 0):
+            self.spells[Spell.IMPERIUS] -= 1
+            return Spell.IMPERIUS
         elif (nof_players >= 9 and de_procs >= 1 and self.spells[Spell.CRUCIO] > 0):
             self.spells[Spell.CRUCIO] -= 1
             return Spell.CRUCIO

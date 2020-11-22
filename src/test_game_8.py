@@ -74,6 +74,8 @@ def test_all_for_8():
                 else:
                     response = vote(
                         header=p[i], vote="Lumos", room_name="test-game-8")
+                print(response.status_code)
+                print(response.json())
                 assert response.status_code == 200
             else:
                 response = vote(header=p[i], vote="Nox",
@@ -85,8 +87,6 @@ def test_all_for_8():
             headers=p[0]
         )
         assert response_get_ingame2.status_code == 200
-        print("\nAfter the voting")
-        print(response_get_ingame2.json())
 
         if de_score > 2 and voldemort_uname == director_uname:
             print("Death eaters won, voldi runs hogwarts")
@@ -137,6 +137,7 @@ def test_all_for_8():
             break
         else:
             pass
+            print(f"Death Eaters: {de_score} , Phoenix Order: {fo_score}")
 
         if de_score == 2:
             response_cast_crucio = client.put(
@@ -165,17 +166,15 @@ def test_all_for_8():
 
         if de_score == 3:
             response_cast_imperio = client.put(
-                "/test-game-8/cast/imperio",
+                "/test-game-8/cast/imperius",
                 headers=p[minister_index],
                 json={"target_uname": unames[(minister_index - 2) % 8]}
             )
             if not imperio_casted:
+                print(response_cast_imperio.json())
                 assert response_cast_imperio.status_code == 200
             else:
-                # TODO change error status code using the correct one
-                # once the spell is implemented
-                assert response_cast_imperio.status_code == 200
-
+                assert response_cast_imperio.status_code == 405
             imperio_casted = True
 
         if (de_score == 4 or de_score == 5) and avadas_avaliables >= 1:
