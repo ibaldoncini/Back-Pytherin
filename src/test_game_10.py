@@ -74,8 +74,6 @@ def test_all_for_10():
                 else:
                     response = vote(
                         header=p[i], vote="Lumos", room_name="test-game-10")
-                print(response.status_code)
-                print(response.json())
                 assert response.status_code == 200
             else:
                 response = vote(header=p[i], vote="Nox",

@@ -15,6 +15,10 @@ class GamePhase(Enum):
     CAST_AVADA_KEDAVRA = auto()     # 8
     CAST_IMPERIUS = auto()          # 9
     CAST_CRUCIO = auto()            # 10
+    CONFIRM_EXPELLIARMUS = auto()   # 11
+    # FOR THE EXPELIARMUS; USE CARD AND DISCARD REQUEST
+    # IF NO, CONTINUE ON PHASE 4
+    # IF YES, RESTART TURN
 
     def __str__(self):
         return self.name
