@@ -244,7 +244,6 @@ async def start_game(
     Will only work if there are 5 players or more.
     """
     room = hub.get_room_by_name(room_name)
-
     if (room.owner != username):
         raise HTTPException(
             status_code=403, detail="You're not the owner of the room")

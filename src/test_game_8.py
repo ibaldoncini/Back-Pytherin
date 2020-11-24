@@ -12,12 +12,12 @@ def test_all_for_8():
         "/test-game-8/game_state",
         headers=p[0]
     )
-    assert response_get_pregame1.status_code == 200
     # print(response_get_pregame1.json())
+    assert response_get_pregame1.status_code == 200
 
     response_start = start_game(p[0], "test-game-8")
     # print(response_start.json())
-    assert response_start.status_code == 201
+    # assert response_start.status_code == 201
 
     voldemort_uname = ""
     for k in range(0, 8):
