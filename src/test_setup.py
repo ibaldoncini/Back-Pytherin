@@ -99,6 +99,10 @@ create(p[0], "test-chaos", 5)
 for i in range(0, 5):
     rta = join(p[i], "test-chaos")
 
+create(p[0], "test-expelliarmus", 10)
+for i in range(0, 10):
+    rta = join(p[i], "test-expelliarmus")
+
 create(p[0], "test-game-5", 5)
 for i in range(0, 5):
     rta = join(p[i], "test-game-5")

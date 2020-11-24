@@ -300,6 +300,7 @@ class Game:
     def restart_turn(self):
         self.last_director = self.director
         self.director = None
+        self.casted_expelliarmus = False
         self.votes.clear()
         self.change_minister()
         voldemort = next(p for p in self.players if p.is_voldemort())
@@ -346,7 +347,6 @@ class Game:
 
     def expelliarmus(self, vote):
         if (vote == 'Lumos'):
-            self.casted_expelliarmus = False
             self.restart_turn()
             pass
         else:

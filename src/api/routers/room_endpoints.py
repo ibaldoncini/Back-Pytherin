@@ -398,12 +398,8 @@ async def discard(body: DiscardRequest,
 
     elif (phase == GamePhase.DIRECTOR_DISCARD and
           game.get_director_user() == username):
-        if (body.card_index not in [0, 1]):
-            raise HTTPException(
-                detail="Index out of bounds", status_code=400)
-
-        elif (body.card_index == 3 and game.get_de_procs() == 5):
-            if (game.is_expelliarmus_casted()):
+        if (body.card_index == 3 and game.get_de_procs() == 5):
+            if (not game.is_expelliarmus_casted()):
                 # The director choose to cast expelliarmus
                 game.cast_expelliarmus()
                 game.set_phase(GamePhase.CONFIRM_EXPELLIARMUS)
@@ -413,6 +409,10 @@ async def discard(body: DiscardRequest,
                 raise HTTPException(
                     detail="You cant cast expelliarmus twice in the round",
                     status_code=status.HTTP_403_FORBIDDEN)
+
+        elif (body.card_index not in [0, 1]):
+            raise HTTPException(
+                detail="Index out of bounds", status_code=400)
 
         game.discard(body.card_index)
         game.proc_leftover_card()
@@ -444,6 +444,7 @@ async def confirm_expelliarmus(body: VoteRequest,
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid selection")
         else:
             game.expelliarmus(body.vote)
+            return {"message": "Expelliarmus! confirmation received"}
     else:
         raise HTTPException(
             status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
