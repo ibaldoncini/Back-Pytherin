@@ -360,8 +360,7 @@ async def get_cards(
     minister = game.get_minister_user()
     director = game.get_director_user()
     if ((phase == GamePhase.MINISTER_DISCARD and minister == username) or
-        (phase == GamePhase.DIRECTOR_DISCARD and director == username)):
-        #
+            (phase == GamePhase.DIRECTOR_DISCARD and director == username)):
         return {"cards": game.get_cards()}
     else:
         raise HTTPException(
@@ -397,10 +396,23 @@ async def discard(body: DiscardRequest,
         game.set_phase(GamePhase.DIRECTOR_DISCARD)
         return {"message": "Successfully discarded"}
 
-    elif (phase == GamePhase.DIRECTOR_DISCARD and game.get_director_user() == username):
+    elif (phase == GamePhase.DIRECTOR_DISCARD and
+          game.get_director_user() == username):
         if (body.card_index not in [0, 1]):
             raise HTTPException(
                 detail="Index out of bounds", status_code=400)
+
+        elif (body.card_index == 3 and game.get_de_procs() == 5):
+            if (game.is_expelliarmus_casted()):
+                # The director choose to cast expelliarmus
+                game.cast_expelliarmus()
+                game.set_phase(GamePhase.CONFIRM_EXPELLIARMUS)
+                # We have to wait the minister to confirm or not the refusal
+                return {"message": "Successfully casted Expelliarmus!"}
+            else:
+                raise HTTPException(
+                    detail="You cant cast expelliarmus twice in the round",
+                    status_code=status.HTTP_403_FORBIDDEN)
 
         game.discard(body.card_index)
         game.proc_leftover_card()
@@ -409,3 +421,30 @@ async def discard(body: DiscardRequest,
     else:
         raise HTTPException(
             detail="You're not allowed to do this", status_code=405)
+
+
+@ router.put("/{room_name}/expelliarmus", tags=["Game"], status_code=status.HTTP_200_OK)
+async def confirm_expelliarmus(body: VoteRequest,
+                               room_name: str = Path(
+                                   ...,
+                                   min_length=6,
+                                   max_length=20,
+                               ),
+                               username: str = Depends(get_username_from_token)):
+    """
+    Endpoint used by the minister to confirm the Expelliarmus Spell
+    """
+    room = check_game_preconditions(username, room_name, hub)
+    game = room.get_game()
+    phase = game.get_phase()
+    minister = game.get_minister_user()
+    if (phase == GamePhase.CONFIRM_EXPELLIARMUS and minister == username):
+        if body.vote not in [Vote.LUMOS.value, Vote.NOX.value]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid selection")
+        else:
+            game.expelliarmus(body.vote)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+            detail="Game is not in expelliarmus phase")
