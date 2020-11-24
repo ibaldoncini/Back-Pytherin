@@ -95,6 +95,10 @@ for i in range(0, 12):
 
 assert register("player1@example.com").status_code == 409
 
+create(p[0], "test-chaos", 5)
+for i in range(0, 5):
+    rta = join(p[i], "test-chaos")
+
 create(p[0], "test-game-5", 5)
 for i in range(0, 5):
     rta = join(p[i], "test-game-5")

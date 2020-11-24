@@ -260,7 +260,7 @@ class Game:
         #To simplify things to front-end
         await async_sleep(3)
         #Just decrease the spell number
-        self.board.spell_check()
+        self.board.spell_check(self.n_of_players)
 
 
     def increase_chaos (self):
