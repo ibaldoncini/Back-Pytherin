@@ -1,6 +1,9 @@
+from os import stat
 from fastapi import APIRouter, HTTPException, status, Depends, Path
 from fastapi_utils.tasks import repeat_every
 from datetime import datetime, timedelta
+
+from starlette.status import HTTP_406_NOT_ACCEPTABLE
 
 from api.models.room_models import TargetedSpellRequest
 from api.handlers.authentication import valid_credentials, get_username_from_token
@@ -89,8 +92,24 @@ async def cast_crucio(body: TargetedSpellRequest,
     game = room.get_game()
     phase = game.get_phase()
     minister = game.get_minister_user()
+    victim = body.target_uname
+    #?Should i throw a different error for each exception?
+    if username == minister and GamePhase.CAST_CRUCIO:
+        if victim not in game.get_alive_players():
+            raise HTTPException(
+                detail="Leave it alone! He`s already dead",status_code=409)
+        elif victim == minister:
+            raise HTTPException(
+                detail="You can`t choose yourself",status_code=406)
+        elif victim in game.get_investigated_players():
+            raise HTTPException(
+                detail="Player already investigated",status_code=409)
+        else:
+            return {"loyalty": game.crucio(victim)}
+    else:
+        raise HTTPException(
+                detail="You`re not allowed to do this",status_code=405)
 
-    return {"message": "Successfully casted Crucio"}
 
 
 @ router.put("/{room_name}/cast/confirm_crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
@@ -103,7 +122,12 @@ async def confirm_crucio(room_name: str = Path(..., min_length=6, max_length=20)
     phase = game.get_phase()
     minister = game.get_minister_user()
 
-    return {"message": "Successfully casted cCrucio"}
+    if (phase == GamePhase.CAST_CRUCIO and username == minister):
+        game.restart_turn()
+        return {"message": "Divination confirmed, moving on"}
+    else:
+        raise HTTPException(
+            detail="You're not allowed to do this", status_code=405)
 
 
 @ router.put("/{room_name}/cast/imperius", tags=["Spells"], status_code=status.HTTP_200_OK)

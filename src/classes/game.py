@@ -36,6 +36,7 @@ class Game:
         self.last_update = datetime.now()
         self.casted_imperius_by: Player = None
         self.chaos_counter : int = 0
+        self.investigated_players : List[Player] = list()
 
 
     def init_players(self, users: List[str]):
@@ -65,6 +66,7 @@ class Game:
                 player.set_loyalty(Loyalty.FENIX_ORDER)
 
         return players
+
 
     def build_from_json(self, json):
         players = []
@@ -112,11 +114,13 @@ class Game:
         elif json["phase"] == GamePhase.VOTE_DIRECTOR.value:
             self.set_phase(GamePhase.VOTE_DIRECTOR)
 
+
     def get_minister_user(self):
         if self.minister is None:
             return "Undefined"
         else:
             return (self.minister.get_user())
+
 
     def change_minister(self):
         """
@@ -139,8 +143,10 @@ class Game:
                               1) % (len(alive_players))
         self.minister = alive_players[new_minister_index]
 
+
     def get_nof_players(self):
         return self.n_of_players
+
 
     def get_director_user(self):
         if self.director is None:
@@ -148,11 +154,13 @@ class Game:
         else:
             return (self.director.get_user())
 
+
     def set_director(self, email):
         if email is None:
             self.director = None
         else:
             self.director = self.__get_player_by_uname(email)
+
 
     def get_last_minister_user(self):
         if self.last_minister is None:
@@ -160,35 +168,44 @@ class Game:
         else:
             return (self.last_minister.get_user())
 
+
     def get_last_director_user(self):
         if self.last_director is None:
             return "Undefined"
         else:
             return (self.last_director.get_user())
 
+
     def get_de_procs(self):
         return (self.board.get_de_procs())
+
 
     def get_fo_procs(self):
         return (self.board.get_fo_procs())
 
+
     def get_cards(self):
         return self.cards
+
 
     def get_board_spells(self):
         result = {key.value: value for key, value in self.board.spells.items()}
         return result
 
+
     def get_deck(self):
         result = map(lambda c: c.value, self.deck.cards)
         return list(result)
 
+
     def discard(self, index):
         self.cards.pop(index)
+
 
     def deal_cards(self):
         new_cards = self.deck.take_3_cards()
         self.cards = new_cards
+
 
     def get_current_players(self):
         """
@@ -200,6 +217,7 @@ class Game:
             unames.append(player.get_user())
         return unames
 
+
     def get_alive_players(self):
         all_players = self.players
         alive_players = filter(lambda p: p.is_player_alive(), all_players)
@@ -209,14 +227,17 @@ class Game:
         player = next(p for p in self.players if p.get_user() == email)
         return player
 
+
     def get_player_role(self, email: str):
         return self.__get_player_by_uname(email).get_role()
+
 
     def get_de_list(self):
         filtered = filter(lambda p:  p.get_loyalty() ==
                           Loyalty.DEATH_EATER, self.players)
 
         return list(map(lambda p: p.get_user(), filtered))
+
 
     def get_voldemort(self):
         voldemort = next(p for p in self.players if p.is_voldemort())
@@ -314,6 +335,7 @@ class Game:
         else:
             self.set_phase(GamePhase.PROPOSE_DIRECTOR)
 
+
     def executive_phase(self):
         spell = self.board.spell_check(self.n_of_players)
         if (spell == Spell.DIVINATION):
@@ -325,15 +347,18 @@ class Game:
         else:
             self.restart_turn()
 
+
     def divination(self):
         top_three = self.cards
         return top_three
+
 
     def avada_kedavra(self, target):
         for player in self.players:
             if target == player.get_user():
                 player.kill()
         self.restart_turn()
+
 
     def imperius(self, casted_by, target):
         for player in self.players:
@@ -346,3 +371,15 @@ class Game:
                 self.minister = player
                 self.votes.clear()
         self.set_phase(GamePhase.PROPOSE_DIRECTOR)
+
+
+    def get_investigated_players (self):
+        return self.investigated_players
+
+
+    def crucio (self,victim_uname : str):
+        victim = self.__get_player_by_uname(victim_uname)
+        self.investigated_players.append(victim_uname)
+        return victim.get_loyalty().value
+
+    

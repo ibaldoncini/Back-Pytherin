@@ -8,6 +8,7 @@ class Player:
         self.role: Role = Role.TBD
         self.loyalty: Loyalty = Loyalty.TBD
         self.is_alive: bool = True
+        self.investigated : bool = False
 
     def get_user(self):
         return self.user
