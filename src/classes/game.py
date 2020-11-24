@@ -251,21 +251,22 @@ class Game:
         return self.chaos_counter
 
 
-    def set_chaos (self,n = 0):
-        self.chaos_counter = n
+    def reset_chaos (self):
+        self.chaos_counter = 0
 
-    
+
     async def do_chaos (self):
         self.proc_top_card()
         #To simplify things to front-end
-        await async_sleep(5)
-        self.set_chaos(0)
+        await async_sleep(3)
         #Just decrease the spell number
         self.board.spell_check()
 
 
     def increase_chaos (self):
-        self.chaos_counter += 1
+        if self.chaos_counter < 3:
+            self.chaos_counter += 1
+        pass #?
 
 
     async def compute_votes(self):
@@ -274,7 +275,8 @@ class Game:
         nox_count = votes['Nox']
         # Wait so the players can see the votes
         await async_sleep(5)
-        if (lumos_count >= nox_count):
+        if (lumos_count > nox_count):
+            self.reset_chaos()
             if (self.director.is_voldemort() and self.board.get_de_procs() >= 3):
                 self.set_phase(GamePhase.DE_WON)
             else:
