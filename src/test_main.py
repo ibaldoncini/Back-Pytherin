@@ -2,7 +2,7 @@
 from fastapi import FastAPI, Depends
 from starlette.middleware.cors import CORSMiddleware
 
-from api.routers import users, room_endpoints, user_info, hub_endpoints
+from api.routers import users, room_endpoints, user_info, hub_endpoints, spells_endpoints
 from api.models.base import db, define_database_and_entities
 from api.handlers.authentication import verify_token
 
@@ -16,6 +16,8 @@ test_app = FastAPI()
 test_app.include_router(users.router)
 test_app.include_router(room_endpoints.router, dependencies=[
                         Depends(verify_token)])
+test_app.include_router(spells_endpoints.router,
+                        dependencies=[Depends(verify_token)])
 test_app.include_router(user_info.router, dependencies=[Depends(verify_token)])
 test_app.include_router(hub_endpoints.router, dependencies=[
                         Depends(verify_token)])

@@ -34,6 +34,7 @@ class Game:
         self.cards: List[Card] = self.deck.take_3_cards()
         self.votes: Dict[str, Vote] = dict()
         self.last_update = datetime.now()
+        self.casted_imperius_by: Player = None
 
     def init_players(self, users: List[str]):
         # Create empty players
@@ -125,8 +126,15 @@ class Game:
         self.last_minister = self.minister
         alive_players = list(
             filter(lambda p: p.is_player_alive(), self.players))
-        last_minister_index = alive_players.index(self.last_minister)
-        new_minister_index = (last_minister_index + 1) % (len(alive_players))
+
+        if self.casted_imperius_by is None:
+            last_minister_index = alive_players.index(self.last_minister)
+        else:
+            last_minister_index = alive_players.index(self.casted_imperius_by)
+            self.casted_imperius_by = None
+
+        new_minister_index = (last_minister_index +
+                              1) % (len(alive_players))
         self.minister = alive_players[new_minister_index]
 
     def get_nof_players(self):
@@ -195,7 +203,6 @@ class Game:
         alive_players = filter(lambda p: p.is_player_alive(), all_players)
         return list(map(lambda p: p.get_user(), alive_players))
 
-    # TO DO NOW WITH USERNAMES
     def __get_player_by_uname(self, email: str):
         player = next(p for p in self.players if p.get_user() == email)
         return player
@@ -216,7 +223,6 @@ class Game:
     # option : This parameter is neceessary to check if a player
     # has already voted.
     def get_votes(self, option=False):
-        # Not sure if the parentheses are necessary
         if ((len(self.get_alive_players()) == len(self.votes)
              and self.phase == GamePhase.VOTE_DIRECTOR) or option):
             return self.votes
@@ -274,12 +280,13 @@ class Game:
             self.set_phase(GamePhase.CAST_DIVINATION)
         elif (spell == Spell.AVADA_KEDAVRA):
             self.set_phase(GamePhase.CAST_AVADA_KEDAVRA)
+        elif (spell == Spell.IMPERIUS):
+            self.set_phase(GamePhase.CAST_IMPERIUS)
         else:
             self.restart_turn()
 
     def divination(self):
         top_three = self.cards
-
         return top_three
 
     def avada_kedavra(self, target):
@@ -287,3 +294,15 @@ class Game:
             if target == player.get_user():
                 player.kill()
         self.restart_turn()
+
+    def imperius(self, casted_by, target):
+        for player in self.players:
+            if casted_by == player.get_user():
+                self.casted_imperius_by = player
+            if target == player.get_user():
+                self.last_director = self.director
+                self.director = None
+                self.last_minister = self.minister
+                self.minister = player
+                self.votes.clear()
+        self.set_phase(GamePhase.PROPOSE_DIRECTOR)

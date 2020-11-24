@@ -12,12 +12,12 @@ def test_all_for_5():
         "/test-game-5/game_state",
         headers=p[0]
     )
-    assert response_get_pregame1.status_code == 200
     print(response_get_pregame1.json())
+    assert response_get_pregame1.status_code == 200
 
     response_start = start_game(p[0], "test-game-5")
     print(response_start.json())
-    assert response_start.status_code == 201
+    #assert response_start.status_code == 201
 
     voldemort_uname = ""
     for k in range(0, 5):
@@ -32,7 +32,7 @@ def test_all_for_5():
             voldemort_uname = unames[k]
         else:
             pass
-    print(f"Voldemort is: {voldemort_uname}")
+    # print(f"Voldemort is: {voldemort_uname}")
 
     round_count = 0
     game_is_not_over = True
@@ -50,8 +50,8 @@ def test_all_for_5():
         assert response_get_ingame.status_code == 200
 
         rta: dict = response_get_ingame.json()
-        print(f"\nStart of round {round_count}")
-        print(rta)
+        # print(f"\nStart of round {round_count}")
+        # print(rta)
         minister_uname: str = rta["minister"]
         minister_index = unames.index(minister_uname)
         director_index = (minister_index + 1) % 5
@@ -84,11 +84,11 @@ def test_all_for_5():
             headers=p[0]
         )
         assert response_get_ingame2.status_code == 200
-        print("\nAfter the voting")
-        print(response_get_ingame2.json())
+        # print("\nAfter the voting")
+        # print(response_get_ingame2.json())
 
         if de_score > 2 and voldemort_uname == director_uname:
-            print("Death eaters won, voldi runs hogwarts")
+            # print("Death eaters won, voldi runs hogwarts")
             game_is_not_over = False
             break
 
@@ -128,11 +128,11 @@ def test_all_for_5():
         fo_score = scores_state["fo_procs"]
 
         if de_score == 6:
-            print("Death eaters won")
+            # print("Death eaters won")
             game_is_not_over = False
             break
         elif fo_score == 5:
-            print("Phoenix order won")
+            # print("Phoenix order won")
             break
         else:
             pass
@@ -144,8 +144,8 @@ def test_all_for_5():
             )
             if not divination_casted:
                 assert response_cast_divination.status_code == 200
-                print("\n Next 3 cards:")
-                print(response_cast_divination.json())
+                # print("\n Next 3 cards:")
+                # print(response_cast_divination.json())
             else:
                 assert response_cast_divination.status_code == 405
             response_confirm_divination = client.put(
@@ -168,14 +168,14 @@ def test_all_for_5():
                 headers=p[minister_index],
                 json={"target_uname": victim_uname}
             )
-            print(response_cast_avada.json())
+            # print(response_cast_avada.json())
             assert response_cast_avada.status_code == 200
             avadas_avaliables -= 1
             if victim_uname == voldemort_uname:
-                print("Voldemort died, F")
+                # print("Voldemort died, F")
                 game_is_not_over = False
 
-        print("--------------------------------------------------")
+        # print("--------------------------------------------------")
 
 
-test_all_for_5()
+# test_all_for_5()

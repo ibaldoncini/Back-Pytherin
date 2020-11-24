@@ -68,7 +68,8 @@ def join(header, room_name: str):
 def start_game(owner, room_name: str):
     response = client.put(
         f"/{room_name}/start",
-        headers=owner
+        headers=owner,
+        json={"room_name": room_name}
     )
     return response
 
@@ -84,9 +85,10 @@ def vote(header: str, vote: str, room_name: str):
     return response
 
 
+# Crear uno especial que no confirme, y usarlo para el test del room join
 p = []
 unames = []
-for i in range(0, 15):
+for i in range(0, 12):
     unames.append(f"player{i}")
     register(f"player{i}@example.com")
     p.append(login(f"player{i}@example.com"))
