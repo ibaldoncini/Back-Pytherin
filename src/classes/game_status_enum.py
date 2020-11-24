@@ -5,7 +5,6 @@ from enum import Enum, unique, auto
 class GamePhase(Enum):
     """Enum for Game phase"""
 
-<<<<<<< HEAD
     PROPOSE_DIRECTOR = auto()       # 1
     VOTE_DIRECTOR = auto()          # 2
     MINISTER_DISCARD = auto()       # 3
@@ -20,16 +19,6 @@ class GamePhase(Enum):
     # FOR THE EXPELIARMUS; USE CARD AND DISCARD REQUEST
     # IF NO, CONTINUE ON PHASE 4
     # IF YES, RESTART TURN
-=======
-    PROPOSE_DIRECTOR = auto()  # 1
-    VOTE_DIRECTOR = auto()  # 2
-    MINISTER_DISCARD = auto()  # 3
-    DIRECTOR_DISCARD = auto()  # 4
-    DE_WON = auto()  # 5
-    FO_WON = auto()  # 6
-    CAST_DIVINATION = auto() #7
-    CAST_AVADA_KEDAVRA = auto() #8
->>>>>>> All done (?)
 
     def __str__(self):
         return self.name
