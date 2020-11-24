@@ -181,7 +181,8 @@ async def get_game_state(
             "phase": the phase the game is in propose director, vote,
                      minister discard ,director discard, (1,2,3,4) respectively,
             "player_list": the players in the game,
-            "votes": the player votes for this turn.
+            "votes": the player votes for this turn,
+            "chaos": the chaos counter.
 
     Or it will return the winner if the game is over
     """
@@ -224,7 +225,8 @@ async def get_game_state(
             "fo_procs": game.get_fo_procs(),
             "phase": game.get_phase(),
             "player_list": game.get_alive_players(),
-            "votes": votes_to_json(game.get_votes())
+            "votes": votes_to_json(game.get_votes()),
+            "chaos": game.get_chaos()
         }
         return json_r
 
@@ -357,9 +359,8 @@ async def get_cards(
     phase = game.get_phase()
     minister = game.get_minister_user()
     director = game.get_director_user()
-
     if ((phase == GamePhase.MINISTER_DISCARD and minister == username) or
-            (phase == GamePhase.DIRECTOR_DISCARD and director == username)):
+        (phase == GamePhase.DIRECTOR_DISCARD and director == username)):
         #
         return {"cards": game.get_cards()}
     else:

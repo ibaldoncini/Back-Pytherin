@@ -35,6 +35,8 @@ class Game:
         self.votes: Dict[str, Vote] = dict()
         self.last_update = datetime.now()
         self.casted_imperius_by: Player = None
+        self.chaos_counter : int = 0
+
 
     def init_players(self, users: List[str]):
         # Create empty players
@@ -239,26 +241,64 @@ class Game:
         self.last_update = datetime.now()
         self.phase = phase
 
+    
+    def proc_top_card (self):
+        card = self.deck.take_card()
+        self.board.proclaim(card)
+
+
+    def get_chaos (self):
+        return self.chaos_counter
+
+
+    def reset_chaos (self):
+        self.chaos_counter = 0
+
+
+    async def do_chaos (self):
+        self.proc_top_card()
+        #To simplify things to front-end
+        await async_sleep(3)
+        #Just decrease the spell number
+        self.board.spell_check(self.n_of_players)
+
+
+    def increase_chaos (self):
+        if self.chaos_counter < 3:
+            self.chaos_counter += 1
+        pass #?
+
+
     async def compute_votes(self):
         votes = Counter(self.votes.values())
         lumos_count = votes['Lumos']
         nox_count = votes['Nox']
         # Wait so the players can see the votes
         await async_sleep(5)
-        if (lumos_count >= nox_count):
+        if (lumos_count > nox_count):
+            self.reset_chaos()
             if (self.director.is_voldemort() and self.board.get_de_procs() >= 3):
                 self.set_phase(GamePhase.DE_WON)
             else:
                 self.set_phase(GamePhase.MINISTER_DISCARD)
         else:
             self.set_director(None)
+            self.increase_chaos()
+            if self.get_chaos() == 3:
+                await self.do_chaos()
             self.restart_turn()
+
 
     def proc_leftover_card(self):
         card = self.cards.pop(0)
         self.board.proclaim(card)
         self.deal_cards()
         self.executive_phase()
+
+    
+    def get_top_card(self):
+        return self.deck[0]
+
 
     def restart_turn(self):
         self.last_director = self.director
@@ -269,7 +309,7 @@ class Game:
 
         if self.board.get_de_procs() >= 6:
             self.set_phase(GamePhase.DE_WON)
-        elif (self.board.get_fo_procs() >= 5 or not voldemort.is_player_alive()):
+        elif self.board.get_fo_procs() >= 5 or not voldemort.is_player_alive():
             self.set_phase(GamePhase.FO_WON)
         else:
             self.set_phase(GamePhase.PROPOSE_DIRECTOR)

@@ -1,4 +1,6 @@
 __pycache/
+__pycache__/
+.pytest_cache/
 *.pyc
 ../.metals/
 ../.vscode/
@@ -11,3 +13,9 @@ __pycache/
 ../share/
 example.sqlite
 ../tests/
+*.code-workspace
+lib/
+lib64/
+*.sqlite
+*.cfg
+../share/
