@@ -12,12 +12,12 @@ def test_expelliarmus():
         "/test-expelliarmus/game_state",
         headers=p[0]
     )
-    print(response_get_pregame1.json())
+    # print(response_get_pregame1.json())
     assert response_get_pregame1.status_code == 200
 
     response_start = start_game(p[0], "test-expelliarmus")
-    print(response_start.json())
-    #assert response_start.status_code == 201
+    # print(response_start.json())
+    assert response_start.status_code == 201
 
     voldemort_uname = ""
     for k in range(0, 10):
@@ -32,7 +32,7 @@ def test_expelliarmus():
             voldemort_uname = unames[k]
         else:
             pass
-    print(f"Voldemort is: {voldemort_uname}")
+    # print(f"Voldemort is: {voldemort_uname}")
 
     round_count = 0
     game_is_not_over = True
@@ -53,15 +53,17 @@ def test_expelliarmus():
         assert response_get_ingame.status_code == 200
 
         rta: dict = response_get_ingame.json()
-        print(f"\nStart of round {round_count}")
-        print(rta)
+        # print(f"\nStart of round {round_count}")
+        # print(rta)
         minister_uname: str = rta["minister"]
         minister_index = unames.index(minister_uname)
-
-        director_index = (minister_index + 1) % 10
-        director_uname: str = unames[director_index]
-
         alive_lads = rta["player_list"]
+
+        director_uname = "James Bond"
+        director_index = (minister_index + 1) % 10
+        while (director_uname not in alive_lads):
+            director_index = (director_index + 1) % 10
+            director_uname: str = unames[director_index]
 
         response_propose = client.put(
             "/test-expelliarmus/director",
@@ -91,7 +93,7 @@ def test_expelliarmus():
         assert response_get_ingame2.status_code == 200
 
         if de_score > 2 and voldemort_uname == director_uname:
-            print("Death eaters won, voldi runs hogwarts")
+            # print("Death eaters won, voldi runs hogwarts")
             game_is_not_over = False
             break
 
@@ -129,7 +131,7 @@ def test_expelliarmus():
                 "test-expelliarmus/discard",
                 json={"card_index": 3},
                 headers=p[director_index])
-            ).status_code == 400
+            ).status_code == 403
 
         if (de_score == 5 and not expelliarmus_cast):
             response_expelliarmus_director = client.put(
@@ -137,7 +139,7 @@ def test_expelliarmus():
                 json={"card_index": 3},
                 headers=p[director_index]
             )
-            print(response_expelliarmus_director.json())
+            # print(response_expelliarmus_director.json())
             assert response_expelliarmus_director.status_code == 201
 
             expelliarmus_cast = True
@@ -149,7 +151,7 @@ def test_expelliarmus():
                     json={"vote": "Lumos"}
                 )
                 assert response_expelliarmus_minister.status_code == 200
-                print(response_expelliarmus_minister.json())
+                # print(response_expelliarmus_minister.json())
                 continue  # With this it should come back to the while statement
             else:
                 response_expelliarmus_minister = client.put(
@@ -157,7 +159,7 @@ def test_expelliarmus():
                     headers=p[minister_index],
                     json={"vote": "Nox"}
                 )
-                print(response_expelliarmus_minister.json())
+                # print(response_expelliarmus_minister.json())
                 assert response_expelliarmus_minister.status_code == 200
         # ---------------EXPELLIARMUS TESTING END------------------
 
@@ -178,15 +180,15 @@ def test_expelliarmus():
         fo_score = scores_state["fo_procs"]
 
         if de_score == 6:
-            print("Death eaters won")
+            # print("Death eaters won")
             game_is_not_over = False
             break
         elif fo_score == 5:
-            print("Phoenix order won")
+            # print("Phoenix order won")
             break
         else:
             pass
-            print(f"Death Eaters: {de_score} , Phoenix Order: {fo_score}")
+            # print(f"Death Eaters: {de_score} , Phoenix Order: {fo_score}")
 
         if de_score == 1 or de_score == 2:
             response_cast_crucio = client.put(
@@ -217,7 +219,7 @@ def test_expelliarmus():
             # ----------TESTING IMPERIUS BAD BEGIN-------------------------
             response_cast_imperio_bad1 = client.put(
                 "/test-expelliarmus/cast/imperius",
-                headers=p[minister_index + 1],
+                headers=p[minister_index + 1 % 10],
                 json={"target_uname": unames[(minister_index - 2) % 10]}
             )
             response_cast_imperio_bad2 = client.put(
@@ -239,7 +241,7 @@ def test_expelliarmus():
                 headers=p[minister_index],
                 json={"target_uname": unames[(minister_index - 2) % 10]}
             )
-            print(response_cast_imperio_good.json())
+            # print(response_cast_imperio_good.json())
             assert response_cast_imperio_good.status_code == 200
 
             imperio_casted = True
@@ -253,14 +255,14 @@ def test_expelliarmus():
                 headers=p[minister_index],
                 json={"target_uname": victim_uname}
             )
-            print(response_cast_avada.json())
+            # print(response_cast_avada.json())
             assert response_cast_avada.status_code == 200
             avadas_avaliables -= 1
             if victim_uname == voldemort_uname:
-                print("Voldemort died, F")
+                # print("Voldemort died, F")
                 game_is_not_over = False
 
-        print("--------------------------------------------------")
+        # print("--------------------------------------------------")
 
 
-test_expelliarmus()
+# test_expelliarmus()

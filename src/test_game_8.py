@@ -166,7 +166,7 @@ def test_all_for_8():
             # ----------TESTING IMPERIUS BAD BEGIN-------------------------
             response_cast_imperio_bad1 = client.put(  # Wrong user
                 "/test-game-8/cast/imperius",
-                headers=p[minister_index+1],
+                headers=p[minister_index + 1 % 8],
                 json={"target_uname": unames[(minister_index - 2) % 8]}
             )
             response_cast_imperio_bad2 = client.put(  # choose himself

@@ -278,9 +278,9 @@ async def propose_director(body: ProposeDirectorRequest,
     phase = game.get_phase()
     minister = game.get_minister_user()
     if (phase == GamePhase.PROPOSE_DIRECTOR and minister == username):
-        if body.director_uname not in game.get_current_players():
+        if body.director_uname not in game.get_alive_players():
             raise HTTPException(
-                status_code=404, detail="Player not found")
+                status_code=404, detail="Player dead or not found")
         elif (body.director_uname == game.get_last_director_user()
               or minister == body.director_uname):
             raise HTTPException(
@@ -398,26 +398,29 @@ async def discard(body: DiscardRequest,
 
     elif (phase == GamePhase.DIRECTOR_DISCARD and
           game.get_director_user() == username):
-        if (body.card_index == 3 and game.get_de_procs() == 5):
-            if (not game.is_expelliarmus_casted()):
-                # The director choose to cast expelliarmus
-                game.cast_expelliarmus()
-                game.set_phase(GamePhase.CONFIRM_EXPELLIARMUS)
-                # We have to wait the minister to confirm or not the refusal
-                return {"message": "Successfully casted Expelliarmus!"}
-            else:
-                raise HTTPException(
-                    detail="You cant cast expelliarmus twice in the round",
-                    status_code=status.HTTP_403_FORBIDDEN)
-
-        elif (body.card_index not in [0, 1]):
+        if (body.card_index not in [0, 1, 3]):
             raise HTTPException(
                 detail="Index out of bounds", status_code=400)
-
-        game.discard(body.card_index)
-        game.proc_leftover_card()
-        return {"message": "Successfully discarded"}
-
+        elif (body.card_index == 3):
+            if (game.get_de_procs() >= 5):
+                if (not game.is_expelliarmus_casted()):
+                    game.cast_expelliarmus()
+                    game.set_phase(GamePhase.CONFIRM_EXPELLIARMUS)
+                    return {"message": "Successfully casted Expelliarmus!"}
+                else:
+                    raise HTTPException(
+                        detail="You cant cast expelliarmus twice in the round",
+                        status_code=status.HTTP_403_FORBIDDEN)
+            else:
+                raise HTTPException(
+                    detail="You can't cast Expelliarmus! yet", status_code=403)
+        elif (body.card_index in [0, 1]):
+            game.discard(body.card_index)
+            game.proc_leftover_card()
+            return {"message": "Successfully discarded"}
+        else:
+            raise HTTPException(
+                detail="Something went fucking wrong mate", status_code=500)
     else:
         raise HTTPException(
             detail="You're not allowed to do this", status_code=405)

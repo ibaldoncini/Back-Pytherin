@@ -347,6 +347,8 @@ class Game:
 
     def expelliarmus(self, vote):
         if (vote == 'Lumos'):
+            self.cards = []
+            self.deal_cards()
             self.restart_turn()
             pass
         else:
