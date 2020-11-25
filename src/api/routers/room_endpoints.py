@@ -409,3 +409,13 @@ async def discard(body: DiscardRequest,
     else:
         raise HTTPException(
             detail="You're not allowed to do this", status_code=405)
+
+
+@router.put("/{room_name}/rt",tags=["Debug"],status_code=200)
+async def restart_turn (room_name: str = Path(...,min_length=6,max_length=20)
+                        ,username : str = Depends(get_username_from_token)):
+    room = check_game_preconditions(username, room_name, hub)
+    game = room.get_game()
+    game.restart_turn()
+
+

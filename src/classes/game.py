@@ -223,6 +223,7 @@ class Game:
         alive_players = filter(lambda p: p.is_player_alive(), all_players)
         return list(map(lambda p: p.get_user(), alive_players))
 
+
     def __get_player_by_uname(self, email: str):
         player = next(p for p in self.players if p.get_user() == email)
         return player
@@ -338,12 +339,14 @@ class Game:
 
     def executive_phase(self):
         spell = self.board.spell_check(self.n_of_players)
-        if (spell == Spell.DIVINATION):
+        if spell == Spell.DIVINATION:
             self.set_phase(GamePhase.CAST_DIVINATION)
-        elif (spell == Spell.AVADA_KEDAVRA):
+        elif spell == Spell.AVADA_KEDAVRA:
             self.set_phase(GamePhase.CAST_AVADA_KEDAVRA)
-        elif (spell == Spell.IMPERIUS):
+        elif spell == Spell.IMPERIUS:
             self.set_phase(GamePhase.CAST_IMPERIUS)
+        elif spell == Spell.CRUCIO:
+            self.set_phase(GamePhase.CAST_CRUCIO)
         else:
             self.restart_turn()
 
@@ -380,6 +383,7 @@ class Game:
     def crucio (self,victim_uname : str):
         victim = self.__get_player_by_uname(victim_uname)
         self.investigated_players.append(victim_uname)
+        #self.restart_turn()
         return victim.get_loyalty().value
 
     

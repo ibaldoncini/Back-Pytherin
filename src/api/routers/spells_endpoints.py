@@ -81,7 +81,7 @@ async def cast_avada_kedavra(body: TargetedSpellRequest,
             detail="You're not allowed to do this", status_code=405)
 
 
-@ router.put("/{room_name}/cast/crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
+@ router.get("/{room_name}/cast/crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
 async def cast_crucio(body: TargetedSpellRequest,
                       room_name: str = Path(...,
                                             min_length=6, max_length=20),
@@ -93,11 +93,13 @@ async def cast_crucio(body: TargetedSpellRequest,
     phase = game.get_phase()
     minister = game.get_minister_user()
     victim = body.target_uname
-    #?Should i throw a different error for each exception?
-    if username == minister and GamePhase.CAST_CRUCIO:
-        if victim not in game.get_alive_players():
+    if username == minister:
+        if phase != GamePhase.CAST_CRUCIO:
             raise HTTPException(
-                detail="Leave it alone! He`s already dead",status_code=409)
+                detail="Game is not in Cruciatus phase",status_code=400)
+        elif victim not in game.get_alive_players():
+            raise HTTPException(
+                detail="Leave it alone! He was already investigated",status_code=409)
         elif victim == minister:
             raise HTTPException(
                 detail="You can`t choose yourself",status_code=406)
@@ -112,7 +114,7 @@ async def cast_crucio(body: TargetedSpellRequest,
 
 
 
-@ router.put("/{room_name}/cast/confirm_crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
+@ router.put("/{room_name}/cast/confirm-crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
 async def confirm_crucio(room_name: str = Path(..., min_length=6, max_length=20),
                          username: str = Depends(get_username_from_token)):
     global hub
