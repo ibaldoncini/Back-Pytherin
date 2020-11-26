@@ -1,12 +1,11 @@
 # users.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from pony.orm import db_session, commit, select, exists
 
 from api.models.base import db  # , DB_User
 from api.models.user_models import User, NewPassword, NewUsername
 from api.utils.login import get_current_user
 from api.handlers.param_check import *
-from api.handlers.authentication import valid_credentials
 from api.handlers.pass_handler import verify_password, get_password_hash
 
 

@@ -1,22 +1,14 @@
-from fastapi import APIRouter, HTTPException, status, Depends, Path
-from fastapi_utils.tasks import repeat_every
-from datetime import datetime, timedelta
 
 from api.models.room_models import TargetedSpellRequest
-from api.handlers.authentication import valid_credentials, get_username_from_token
+from api.handlers.authentication import get_username_from_token
 from api.handlers.game_checks import check_game_preconditions
-from api.utils.room_utils import check_email_status, votes_to_json
-
-from classes.room import Room, RoomStatus
-from classes.room_hub import RoomHub
-from classes.role_enum import Role
-from classes.game_status_enum import GamePhase
-from classes.game import Vote, Game
-
 from api.routers.room_endpoints import hub
-router = APIRouter()
 
-#hub = RoomHub()
+from classes.game_status_enum import GamePhase
+
+from fastapi import APIRouter, HTTPException, status, Depends, Path
+
+router = APIRouter()
 
 
 @ router.get("/{room_name}/cast/divination", tags=["Spells"], status_code=status.HTTP_200_OK)
@@ -78,22 +70,50 @@ async def cast_avada_kedavra(body: TargetedSpellRequest,
             detail="You're not allowed to do this", status_code=405)
 
 
-@ router.put("/{room_name}/cast/crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
+@ router.get("/{room_name}/cast/crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
 async def cast_crucio(body: TargetedSpellRequest,
                       room_name: str = Path(...,
                                             min_length=6, max_length=20),
                       username: str = Depends(get_username_from_token)):
+    """ 
+    Endpoint that casts the spell "crucio", revealing the loyalty of some
+    player to the minister.
+    THROWS:
+    200 if OK
+    400 if game is not in CAST_CRUCIO phase
+    405 if who made the request is not the minister
+    406 if the victim is the minister (minister voted himself)
+    409 if the playet is dead or was already investigated 
+    """
     global hub
     room = check_game_preconditions(username, room_name, hub)
 
     game = room.get_game()
     phase = game.get_phase()
     minister = game.get_minister_user()
+    victim = body.target_uname
+    if username == minister:
+        if phase != GamePhase.CAST_CRUCIO:
+            raise HTTPException(
+                detail="Game is not in Cruciatus phase",status_code=400)
+        elif victim not in game.get_alive_players():
+            raise HTTPException(
+                detail="Let him rest in peace!",status_code=409)
+        elif victim == minister:
+            raise HTTPException(
+                detail="You can`t choose yourself",status_code=406)
+        elif victim in game.get_investigated_players():
+            raise HTTPException(
+                detail="Player already investigated",status_code=409)
+        else:
+            return {"loyalty": game.crucio(victim)}
+    else:
+        raise HTTPException(
+                detail="You`re not allowed to do this",status_code=405)
 
-    return {"message": "Successfully casted Crucio"}
 
 
-@ router.put("/{room_name}/cast/confirm_crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
+@ router.put("/{room_name}/cast/confirm-crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
 async def confirm_crucio(room_name: str = Path(..., min_length=6, max_length=20),
                          username: str = Depends(get_username_from_token)):
     global hub
@@ -103,7 +123,12 @@ async def confirm_crucio(room_name: str = Path(..., min_length=6, max_length=20)
     phase = game.get_phase()
     minister = game.get_minister_user()
 
-    return {"message": "Successfully casted cCrucio"}
+    if (phase == GamePhase.CAST_CRUCIO and username == minister):
+        game.restart_turn()
+        return {"message": "Divination confirmed, moving on"}
+    else:
+        raise HTTPException(
+            detail="You're not allowed to do this", status_code=405)
 
 
 @ router.put("/{room_name}/cast/imperius", tags=["Spells"], status_code=status.HTTP_200_OK)

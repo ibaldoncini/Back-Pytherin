@@ -2,11 +2,8 @@
 from pony.orm import *
 from datetime import date
 from pydantic.networks import EmailStr
-from typing import List
 from classes.room import Room, RoomStatus
 from classes.game import Game
-import sys
-import os
 db = Database()
 
 

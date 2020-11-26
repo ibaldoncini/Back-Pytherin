@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Path
 from fastapi_utils.tasks import repeat_every
 from datetime import datetime, timedelta
 
-from api.models.room_models import VoteRequest, RoomCreationRequest, TargetedSpellRequest, ProposeDirectorRequest, DiscardRequest
+from api.models.room_models import VoteRequest, RoomCreationRequest, ProposeDirectorRequest, DiscardRequest
 from api.handlers.authentication import valid_credentials, get_username_from_token
 from api.handlers.game_checks import check_game_preconditions
 from api.utils.room_utils import check_email_status, votes_to_json
@@ -452,3 +452,4 @@ async def confirm_expelliarmus(body: VoteRequest,
         raise HTTPException(
             status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
             detail="Game is not in expelliarmus phase")
+

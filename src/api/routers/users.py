@@ -1,5 +1,6 @@
 # users.py
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse
 from datetime import datetime, timedelta
 from pony.orm import db_session, commit
@@ -12,6 +13,7 @@ from api.handlers.pass_handler import *
 from api.handlers.authentication import *
 from api.handlers.param_check import *
 from api.handlers.emailvalidation import *
+from classes.game import Vote
 
 
 router = APIRouter()

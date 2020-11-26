@@ -67,7 +67,10 @@ class Board:
         elif (nof_players >= 7 and de_procs == 3 and self.spells[Spell.IMPERIUS] > 0):
             self.spells[Spell.IMPERIUS] -= 1
             return Spell.IMPERIUS
-        elif (nof_players >= 9 and de_procs >= 1 and self.spells[Spell.CRUCIO] > 0):
+        elif (nof_players >= 9 and de_procs == 1 and self.spells[Spell.CRUCIO] > 1):
+            self.spells[Spell.CRUCIO] -= 1
+            return Spell.CRUCIO
+        elif nof_players >= 9 and de_procs == 2 and self.spells[Spell.CRUCIO] > 0:
             self.spells[Spell.CRUCIO] -= 1
             return Spell.CRUCIO
         elif ((de_procs == 4 and self.spells[Spell.AVADA_KEDAVRA] > 1)
