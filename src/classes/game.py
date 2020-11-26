@@ -35,8 +35,8 @@ class Game:
         self.votes: Dict[str, Vote] = dict()
         self.last_update = datetime.now()
         self.casted_imperius_by: Player = None
-        self.chaos_counter : int = 0
-
+        self.casted_expelliarmus: bool = False
+        self.chaos_counter: int = 0
 
     def init_players(self, users: List[str]):
         # Create empty players
@@ -186,6 +186,12 @@ class Game:
     def discard(self, index):
         self.cards.pop(index)
 
+    def is_expelliarmus_casted(self):
+        return self.casted_expelliarmus
+
+    def cast_expelliarmus(self):
+        self.casted_expelliarmus = True
+
     def deal_cards(self):
         new_cards = self.deck.take_3_cards()
         self.cards = new_cards
@@ -241,33 +247,27 @@ class Game:
         self.last_update = datetime.now()
         self.phase = phase
 
-    
-    def proc_top_card (self):
+    def proc_top_card(self):
         card = self.deck.take_card()
         self.board.proclaim(card)
 
-
-    def get_chaos (self):
+    def get_chaos(self):
         return self.chaos_counter
 
-
-    def reset_chaos (self):
+    def reset_chaos(self):
         self.chaos_counter = 0
 
-
-    async def do_chaos (self):
+    async def do_chaos(self):
         self.proc_top_card()
-        #To simplify things to front-end
+        # To simplify things to front-end
         await async_sleep(3)
-        #Just decrease the spell number
+        # Just decrease the spell number
         self.board.spell_check(self.n_of_players)
 
-
-    def increase_chaos (self):
+    def increase_chaos(self):
         if self.chaos_counter < 3:
             self.chaos_counter += 1
-        pass #?
-
+        pass  # ?
 
     async def compute_votes(self):
         votes = Counter(self.votes.values())
@@ -288,21 +288,19 @@ class Game:
                 await self.do_chaos()
             self.restart_turn()
 
-
     def proc_leftover_card(self):
         card = self.cards.pop(0)
         self.board.proclaim(card)
         self.deal_cards()
         self.executive_phase()
 
-    
     def get_top_card(self):
         return self.deck[0]
-
 
     def restart_turn(self):
         self.last_director = self.director
         self.director = None
+        self.casted_expelliarmus = False
         self.votes.clear()
         self.change_minister()
         voldemort = next(p for p in self.players if p.is_voldemort())
@@ -346,3 +344,13 @@ class Game:
                 self.minister = player
                 self.votes.clear()
         self.set_phase(GamePhase.PROPOSE_DIRECTOR)
+
+    def expelliarmus(self, vote):
+        if (vote == 'Lumos'):
+            self.cards = []
+            self.deal_cards()
+            self.restart_turn()
+            pass
+        else:
+            self.set_phase(GamePhase.DIRECTOR_DISCARD)
+            pass
