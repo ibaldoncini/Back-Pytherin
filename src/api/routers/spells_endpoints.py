@@ -98,7 +98,7 @@ async def cast_crucio(body: TargetedSpellRequest,
                 detail="Game is not in Cruciatus phase",status_code=400)
         elif victim not in game.get_alive_players():
             raise HTTPException(
-                detail="Leave him rest in peace!",status_code=409)
+                detail="Let him rest in peace!",status_code=409)
         elif victim == minister:
             raise HTTPException(
                 detail="You can`t choose yourself",status_code=406)

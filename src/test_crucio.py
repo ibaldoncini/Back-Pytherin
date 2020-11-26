@@ -130,7 +130,6 @@ def get_voldi (room_name = TC):
 def test_kys_5 ():
     first = True
     response_get_pregame1 = get_game_state()
-    print(response_get_pregame1.json())
     assert response_get_pregame1.status_code == 200
 
     response_start = start_game(owner, TC)
@@ -214,24 +213,23 @@ def test_kys_5 ():
 
 def test_happy_path_9 ():
     response_get_pregame1 = get_game_state(room_name=TC9)
-    print(response_get_pregame1.json())
     assert response_get_pregame1.status_code == 200
 
     response_start = start_game(owner, TC9)
-    print(response_start.json())
     assert response_start.status_code == 201
     voldemort_uname = get_voldi(TC9)
     
 
     round_count = 0
     de_score = 0
+    crucios = 2
 
     while de_score <= 2:
         round_count += 1
+        print("-------------------------------------\n")
         print("Round count " + str(round_count))
         response_get_ingame = get_game_state(room_name=TC9)
         assert response_get_ingame.status_code == 200
-        print(response_get_ingame.json())
 
         rta: dict = response_get_ingame.json()
         minister_uname: str = rta["minister"]
@@ -274,27 +272,30 @@ def test_happy_path_9 ():
 
         assert response_post_proclamation.status_code == 200
         scores_state: dict = response_post_proclamation.json()
+        print(f"SCORES_STATE {str(scores_state)}")
 
         poor_guy = minister_index
         while poor_guy == minister_index:
-            poor_guy = randint(0,9)
+            poor_guy = randint(0,8)
 
         de_score = scores_state["de_procs"]
-        response_cast_crucio = cast_crucio(minister_index,poor_guy,TC9)
 
-        response_get_ingame3 = get_game_state(room_name=TC9)
-        print(response_get_ingame3.json())
-
-        if (de_score == 1 or de_score == 2):
+        if (de_score == 1 and crucios > 1):
+            response_cast_crucio = cast_crucio(minister_index,poor_guy,TC9)     
             print(response_cast_crucio.status_code)
             print("LOYALTY: " + str(response_cast_crucio.json()))
+            crucios -= 1
             #EDGE CASE, user was already investigated
             assert (response_cast_crucio.status_code == 200 or
                     response_cast_crucio.status_code == 409)
-            
-        else:
+        elif (de_score == 2 and crucios > 0):
+            response_cast_crucio = cast_crucio(minister_index,poor_guy,TC9)     
             print(response_cast_crucio.status_code)
-            assert response_cast_crucio.status_code == 400
+            print("LOYALTY: " + str(response_cast_crucio.json()))
+            crucios -= 1
+            #EDGE CASE, user was already investigated
+            assert (response_cast_crucio.status_code == 200 or
+                    response_cast_crucio.status_code == 409)
 
         confirm = confirm_crucio(minister_index,TC9)
 
@@ -303,6 +304,7 @@ def test_happy_path_9 ():
 
 
 
-
+#print("TEST_KYS_5")
 #test_kys_5()
-#test_happy_path_9()
+print("TEST_HAPPY_PATH_9")
+test_happy_path_9()
