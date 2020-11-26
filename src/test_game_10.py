@@ -10,11 +10,11 @@ def test_all_for_10():
         "/test-game-10/game_state",
         headers=p[0]
     )
-    print(response_get_pregame1.json())
+    # print(response_get_pregame1.json())
     assert response_get_pregame1.status_code == 200
 
     response_start = start_game(p[0], "test-game-10")
-    print(response_start.json())
+    # print(response_start.json())
     #assert response_start.status_code == 201
 
     voldemort_uname = ""
@@ -53,20 +53,24 @@ def test_all_for_10():
         # print(rta)
         minister_uname: str = rta["minister"]
         minister_index = unames.index(minister_uname)
-        director_index = (minister_index + 1) % 10
-        director_uname: str = unames[director_index]
         alive_lads = rta["player_list"]
 
-        respone_propose = client.put(
+        director_index = (minister_index + 1) % 10
+        director_uname: str = unames[director_index]
+        while (director_uname not in alive_lads):
+            director_index = (director_index + 1) % 10
+            director_uname: str = unames[director_index]
+
+        response_propose = client.put(
             "/test-game-10/director",
             json={"director_uname": director_uname},
             headers=p[minister_index]
         )
-        assert respone_propose.status_code == 201
+        assert response_propose.status_code == 201
 
         for i in range(0, 10):
             if unames[i] in alive_lads:
-                if (not (i % 3)):
+                if (not (i % 9)):
                     response = vote(
                         header=p[i], vote="Nox", room_name="test-game-10")
                 else:
@@ -85,7 +89,7 @@ def test_all_for_10():
         assert response_get_ingame2.status_code == 200
 
         if de_score > 2 and voldemort_uname == director_uname:
-            # print("Death eaters won, voldi runs hogwarts")
+            print("Death eaters won, voldi runs hogwarts")
             game_is_not_over = False
             break
 
@@ -125,46 +129,60 @@ def test_all_for_10():
         fo_score = scores_state["fo_procs"]
 
         if de_score == 6:
-            # print("Death eaters won")
+            print("Death eaters won")
             game_is_not_over = False
             break
         elif fo_score == 5:
-            # print("Phoenix order won")
+            print("Phoenix order won")
+            game_is_not_over = False
             break
         else:
             pass
             # print(f"Death Eaters: {de_score} , Phoenix Order: {fo_score}")
 
-        if de_score == 1 or de_score == 2:
-            response_cast_crucio = client.put(
+        if (de_score == 1 and crucio_availables > 1):
+            response_cast_crucio = client.get(
                 "/test-game-10/cast/crucio",
                 headers=p[minister_index],
                 json={"target_uname": unames[(minister_index - 2) % 10]}
             )
-            if (crucio_availables > 0):
-                assert response_cast_crucio.status_code == 200
-            else:
-                # TODO change error status code using the correct one
-                # once the spell is implemented
-                assert response_cast_crucio.status_code == 200
+            # print(response_cast_crucio.json())
+            assert response_cast_crucio.status_code == 200
+        elif (de_score == 2 and crucio_availables > 0):
+            response_cast_crucio = client.get(
+                "/test-game-10/cast/crucio",
+                headers=p[minister_index],
+                json={"target_uname": unames[(minister_index - 2) % 10]}
+            )
+            # print(response_cast_crucio.json())
+            assert response_cast_crucio.status_code == 200
+        else:
+            pass
+
+        if (de_score == 1 and crucio_availables > 1):
             response_confirm_crucio = client.put(
-                "/test-game-10/cast/confirm_crucio",
+                "/test-game-10/cast/confirm-crucio",
                 headers=p[minister_index]
             )
-            if (crucio_availables > 0):
-                assert response_confirm_crucio.status_code == 200
-            else:
-                # TODO change error status code using the correct one
-                # once the spell is implemented
-                assert response_confirm_crucio.status_code == 200
-
+            # print(response_confirm_crucio.json())
+            assert response_confirm_crucio.status_code == 200
             crucio_availables -= 1
+        elif (de_score == 2 and crucio_availables > 0):
+            response_confirm_crucio = client.put(
+                "/test-game-10/cast/confirm-crucio",
+                headers=p[minister_index]
+            )
+            # print(response_confirm_crucio.json())
+            assert response_confirm_crucio.status_code == 200
+            crucio_availables -= 1
+        else:
+            pass
 
         if de_score == 3 and not imperio_casted:
             # ----------TESTING IMPERIUS BAD BEGIN-------------------------
             response_cast_imperio_bad1 = client.put(
                 "/test-game-10/cast/imperius",
-                headers=p[minister_index + 1 % 10],
+                headers=p[(minister_index + 1) % 10],
                 json={"target_uname": unames[(minister_index - 2) % 10]}
             )
             response_cast_imperio_bad2 = client.put(
@@ -204,10 +222,10 @@ def test_all_for_10():
             assert response_cast_avada.status_code == 200
             avadas_avaliables -= 1
             if victim_uname == voldemort_uname:
-                # print("Voldemort died, F")
+                print("Voldemort died, F")
                 game_is_not_over = False
 
         # print("--------------------------------------------------")
 
 
-# test_all_for_10()
+test_all_for_10()

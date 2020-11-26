@@ -59,8 +59,8 @@ def test_expelliarmus():
         minister_index = unames.index(minister_uname)
         alive_lads = rta["player_list"]
 
-        director_uname = "James Bond"
         director_index = (minister_index + 1) % 10
+        director_uname: str = unames[director_index]
         while (director_uname not in alive_lads):
             director_index = (director_index + 1) % 10
             director_uname: str = unames[director_index]
@@ -69,7 +69,6 @@ def test_expelliarmus():
             "/test-expelliarmus/director",
             json={"director_uname": director_uname},
             headers=p[minister_index]
-
         )
         assert response_propose.status_code == 201
 
@@ -190,36 +189,45 @@ def test_expelliarmus():
             pass
             # print(f"Death Eaters: {de_score} , Phoenix Order: {fo_score}")
 
-        if de_score == 1 or de_score == 2:
-            response_cast_crucio = client.put(
+        if de_score == 1 and crucio_availables > 1:
+            response_cast_crucio = client.get(
                 "/test-expelliarmus/cast/crucio",
                 headers=p[minister_index],
                 json={"target_uname": unames[(minister_index - 2) % 10]}
             )
-            if (crucio_availables > 0):
-                assert response_cast_crucio.status_code == 200
-            else:
-                # TODO change error status code using the correct one
-                # once the spell is implemented
-                assert response_cast_crucio.status_code == 200
+            assert response_cast_crucio.status_code == 200
+        elif de_score == 2 and crucio_availables > 0:
+            response_cast_crucio = client.get(
+                "/test-expelliarmus/cast/crucio",
+                headers=p[minister_index],
+                json={"target_uname": unames[(minister_index - 2) % 10]}
+            )
+            assert response_cast_crucio.status_code == 200
+        else:
+            pass
+
+        if de_score == 1 and crucio_availables > 1:
             response_confirm_crucio = client.put(
-                "/test-expelliarmus/cast/confirm_crucio",
+                "/test-expelliarmus/cast/confirm-crucio",
                 headers=p[minister_index]
             )
-            if (crucio_availables > 0):
-                assert response_confirm_crucio.status_code == 200
-            else:
-                # TODO change error status code using the correct one
-                # once the spell is implemented
-                assert response_confirm_crucio.status_code == 200
-
+            assert response_confirm_crucio.status_code == 200
             crucio_availables -= 1
+        elif de_score == 2 and crucio_availables > 0:
+            response_confirm_crucio = client.put(
+                "/test-expelliarmus/cast/confirm-crucio",
+                headers=p[minister_index]
+            )
+            assert response_confirm_crucio.status_code == 200
+            crucio_availables -= 1
+        else:
+            pass
 
         if de_score == 3 and not imperio_casted:
             # ----------TESTING IMPERIUS BAD BEGIN-------------------------
             response_cast_imperio_bad1 = client.put(
                 "/test-expelliarmus/cast/imperius",
-                headers=p[minister_index + 1 % 10],
+                headers=p[(minister_index + 1) % 10],
                 json={"target_uname": unames[(minister_index - 2) % 10]}
             )
             response_cast_imperio_bad2 = client.put(

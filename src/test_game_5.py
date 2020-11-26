@@ -65,7 +65,7 @@ def test_all_for_5():
 
         for i in range(0, 5):
             if unames[i] in alive_lads:
-                if (i % 2):
+                if (not (i % 4)):
                     response = vote(
                         header=p[i], vote="Nox", room_name="test-game-5")
                 else:
@@ -82,11 +82,9 @@ def test_all_for_5():
             headers=p[0]
         )
         assert response_get_ingame2.status_code == 200
-        # print("\nAfter the voting")
-        # print(response_get_ingame2.json())
 
         if de_score > 2 and voldemort_uname == director_uname:
-            # print("Death eaters won, voldi runs hogwarts")
+            print("Death eaters won, voldi runs hogwarts")
             game_is_not_over = False
             break
 
@@ -126,11 +124,11 @@ def test_all_for_5():
         fo_score = scores_state["fo_procs"]
 
         if de_score == 6:
-            # print("Death eaters won")
+            print("Death eaters won")
             game_is_not_over = False
             break
         elif fo_score == 5:
-            # print("Phoenix order won")
+            print("Phoenix order won")
             break
         else:
             pass
@@ -170,7 +168,7 @@ def test_all_for_5():
             assert response_cast_avada.status_code == 200
             avadas_avaliables -= 1
             if victim_uname == voldemort_uname:
-                # print("Voldemort died, F")
+                print("Voldemort died, F")
                 game_is_not_over = False
 
         # print("--------------------------------------------------")

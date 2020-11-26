@@ -95,22 +95,21 @@ async def cast_crucio(body: TargetedSpellRequest,
     if username == minister:
         if phase != GamePhase.CAST_CRUCIO:
             raise HTTPException(
-                detail="Game is not in Cruciatus phase",status_code=400)
+                detail="Game is not in Cruciatus phase", status_code=400)
         elif victim not in game.get_alive_players():
             raise HTTPException(
-                detail="Let him rest in peace!",status_code=409)
+                detail="Let him rest in peace!", status_code=409)
         elif victim == minister:
             raise HTTPException(
-                detail="You can`t choose yourself",status_code=406)
+                detail="You can`t choose yourself", status_code=406)
         elif victim in game.get_investigated_players():
             raise HTTPException(
-                detail="Player already investigated",status_code=409)
+                detail="Player already investigated", status_code=409)
         else:
             return {"loyalty": game.crucio(victim)}
     else:
         raise HTTPException(
-                detail="You`re not allowed to do this",status_code=405)
-
+            detail="You`re not allowed to do this", status_code=405)
 
 
 @ router.put("/{room_name}/cast/confirm-crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
@@ -125,7 +124,7 @@ async def confirm_crucio(room_name: str = Path(..., min_length=6, max_length=20)
 
     if (phase == GamePhase.CAST_CRUCIO and username == minister):
         game.restart_turn()
-        return {"message": "Divination confirmed, moving on"}
+        return {"message": "Crucio confirmed, moving on"}
     else:
         raise HTTPException(
             detail="You're not allowed to do this", status_code=405)
@@ -154,17 +153,3 @@ async def cast_imperius(body: TargetedSpellRequest,
     else:
         raise HTTPException(
             detail="You're not allowed to do this", status_code=405)
-
-
-@ router.put("/{room_name}/cast/expelliarmus", tags=["Spells"], status_code=status.HTTP_200_OK)
-async def cast_expelliarmus(room_name: str = Path(
-                            ..., min_length=6, max_length=20),
-                            username: str = Depends(get_username_from_token)):
-    global hub
-    room = check_game_preconditions(username, room_name, hub)
-
-    game = room.get_game()
-    phase = game.get_phase()
-    minister = game.get_minister_user()
-
-    return {"message": "Successfully casted Expelliarmus"}

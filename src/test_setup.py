@@ -85,7 +85,6 @@ def vote(header: str, vote: str, room_name: str):
     return response
 
 
-# Crear uno especial que no confirme, y usarlo para el test del room join
 p = []
 unames = []
 for i in range(0, 12):
