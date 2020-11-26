@@ -51,8 +51,13 @@ while True:
                      headers=header)
 
     elif (str(phase) == str(GamePhase.VOTE_DIRECTOR.value)):
+        prob = randint(1, 4)
+        if prob == 1:
+            vote = 'Nox'
+        else:
+            vote = 'Lumos'
         requests.put(f"{url}/{room_name}/vote",
-                     json={"vote": "Lumos"},
+                     json={"vote": vote},
                      headers=header)
 
     elif (str(phase) == str(GamePhase.MINISTER_DISCARD.value) and nick == minister):
