@@ -1,26 +1,28 @@
 from fastapi.testclient import TestClient
+from pony.orm import db_session, commit
+from api.models.base import db
 from test_main import test_app
 from test_setup import p, start_game, unames, vote
 
 client = TestClient(test_app)
 
 
-def test_all_for_8():
+def test_expelliarmus():
     response_get_pregame1 = client.get(
-        "/test-game-8/game_state",
+        "/test-expelliarmus/game_state",
         headers=p[0]
     )
     # print(response_get_pregame1.json())
     assert response_get_pregame1.status_code == 200
 
-    response_start = start_game(p[0], "test-game-8")
+    response_start = start_game(p[0], "test-expelliarmus")
     # print(response_start.json())
-    # assert response_start.status_code == 201
+    assert response_start.status_code == 201
 
     voldemort_uname = ""
-    for k in range(0, 8):
+    for k in range(0, 10):
         response_get_game = client.get(
-            "/test-game-8/game_state",
+            "/test-expelliarmus/game_state",
             headers=p[k]
         )
         assert response_get_game.status_code == 200
@@ -36,14 +38,16 @@ def test_all_for_8():
     game_is_not_over = True
     de_score = 0
     fo_score = 0
-    crucio_casted = False
     imperio_casted = False
+    expelliarmus_cast = False
+    crucio_availables = 2
     avadas_avaliables = 2
 
     while game_is_not_over:
         round_count += 1
+        expelliarmus_cast = False
         response_get_ingame = client.get(
-            "/test-game-8/game_state",
+            "/test-expelliarmus/game_state",
             headers=p[0]
         )
         assert response_get_ingame.status_code == 200
@@ -53,33 +57,37 @@ def test_all_for_8():
         # print(rta)
         minister_uname: str = rta["minister"]
         minister_index = unames.index(minister_uname)
-        director_index = (minister_index + 1) % 8
-        director_uname: str = unames[director_index]
         alive_lads = rta["player_list"]
 
-        respone_propose = client.put(
-            "/test-game-8/director",
+        director_uname = "James Bond"
+        director_index = (minister_index + 1) % 10
+        while (director_uname not in alive_lads):
+            director_index = (director_index + 1) % 10
+            director_uname: str = unames[director_index]
+
+        response_propose = client.put(
+            "/test-expelliarmus/director",
             json={"director_uname": director_uname},
             headers=p[minister_index]
-        )
-        assert respone_propose.status_code == 201
 
-        for i in range(0, 8):
+        )
+        assert response_propose.status_code == 201
+
+        for i in range(0, 10):
             if unames[i] in alive_lads:
-                if (not (i % 3)):
+                if (voldemort_uname != director_uname):
                     response = vote(
-                        header=p[i], vote="Nox", room_name="test-game-8")
+                        header=p[i], vote="Lumos", room_name="test-expelliarmus")
+                    assert response.status_code == 200
                 else:
                     response = vote(
-                        header=p[i], vote="Lumos", room_name="test-game-8")
-                assert response.status_code == 200
-            else:
-                response = vote(header=p[i], vote="Nox",
-                                room_name="test-game-8")
-                assert response.status_code == 409
+                        header=p[i], vote="Nox", room_name="test-expelliarmus")
+                    assert response.status_code == 200
+        if (voldemort_uname == director_uname):
+            continue
 
         response_get_ingame2 = client.get(
-            "/test-game-8/game_state",
+            "/test-expelliarmus/game_state",
             headers=p[0]
         )
         assert response_get_ingame2.status_code == 200
@@ -89,34 +97,81 @@ def test_all_for_8():
             game_is_not_over = False
             break
 
+        # ---------------------------------
+        if (round_count == 2):
+            assert (client.put(
+                "test-expelliarmus/discard",
+                json={"card_index": 3},
+                headers=p[director_index])
+            ).status_code == 405
+        # ---------------------------------
+
         response_get_cards1 = client.get(
-            "test-game-8/cards",
+            "test-expelliarmus/cards",
             headers=p[minister_index]
         )
         assert response_get_cards1.status_code == 200
 
         response_discard1 = client.put(
-            "test-game-8/discard",
+            "test-expelliarmus/discard",
             json={"card_index": 0},
             headers=p[minister_index]
         )
         assert response_discard1.status_code == 201
 
         response_get_cards2 = client.get(
-            "test-game-8/cards",
+            "test-expelliarmus/cards",
             headers=p[director_index]
         )
         assert response_get_cards2.status_code == 200
 
+        # ---------------------- EXPELLIARMUS TESTING
+        if (round_count == 2):
+            assert (client.put(
+                "test-expelliarmus/discard",
+                json={"card_index": 3},
+                headers=p[director_index])
+            ).status_code == 403
+
+        if (de_score == 5 and not expelliarmus_cast):
+            response_expelliarmus_director = client.put(
+                "test-expelliarmus/discard",
+                json={"card_index": 3},
+                headers=p[director_index]
+            )
+            # print(response_expelliarmus_director.json())
+            assert response_expelliarmus_director.status_code == 201
+
+            expelliarmus_cast = True
+
+            if (round_count % 2):
+                response_expelliarmus_minister = client.put(
+                    f"/test-expelliarmus/expelliarmus",
+                    headers=p[minister_index],
+                    json={"vote": "Lumos"}
+                )
+                assert response_expelliarmus_minister.status_code == 200
+                # print(response_expelliarmus_minister.json())
+                continue  # With this it should come back to the while statement
+            else:
+                response_expelliarmus_minister = client.put(
+                    f"/test-expelliarmus/expelliarmus",
+                    headers=p[minister_index],
+                    json={"vote": "Nox"}
+                )
+                # print(response_expelliarmus_minister.json())
+                assert response_expelliarmus_minister.status_code == 200
+        # ---------------EXPELLIARMUS TESTING END------------------
+
         response_discard2 = client.put(
-            "test-game-8/discard",
+            "test-expelliarmus/discard",
             json={"card_index": 0},
             headers=p[director_index]
         )
         assert response_discard2.status_code == 201
 
         response_post_proclamation = client.get(
-            "/test-game-8/game_state",
+            "/test-expelliarmus/game_state",
             headers=p[0]
         )
         assert response_post_proclamation.status_code == 200
@@ -135,45 +190,45 @@ def test_all_for_8():
             pass
             # print(f"Death Eaters: {de_score} , Phoenix Order: {fo_score}")
 
-        if de_score == 2:
+        if de_score == 1 or de_score == 2:
             response_cast_crucio = client.put(
-                "/test-game-8/cast/crucio",
+                "/test-expelliarmus/cast/crucio",
                 headers=p[minister_index],
-                json={"target_uname": unames[(minister_index - 2) % 8]}
+                json={"target_uname": unames[(minister_index - 2) % 10]}
             )
-            if not crucio_casted:
+            if (crucio_availables > 0):
                 assert response_cast_crucio.status_code == 200
             else:
                 # TODO change error status code using the correct one
                 # once the spell is implemented
                 assert response_cast_crucio.status_code == 200
             response_confirm_crucio = client.put(
-                "/test-game-8/cast/confirm_crucio",
+                "/test-expelliarmus/cast/confirm_crucio",
                 headers=p[minister_index]
             )
-            if not crucio_casted:
+            if (crucio_availables > 0):
                 assert response_confirm_crucio.status_code == 200
             else:
                 # TODO change error status code using the correct one
                 # once the spell is implemented
                 assert response_confirm_crucio.status_code == 200
 
-            crucio_casted = True
+            crucio_availables -= 1
 
         if de_score == 3 and not imperio_casted:
             # ----------TESTING IMPERIUS BAD BEGIN-------------------------
-            response_cast_imperio_bad1 = client.put(  # Wrong user
-                "/test-game-8/cast/imperius",
-                headers=p[minister_index + 1 % 8],
-                json={"target_uname": unames[(minister_index - 2) % 8]}
+            response_cast_imperio_bad1 = client.put(
+                "/test-expelliarmus/cast/imperius",
+                headers=p[minister_index + 1 % 10],
+                json={"target_uname": unames[(minister_index - 2) % 10]}
             )
-            response_cast_imperio_bad2 = client.put(  # choose himself
-                "/test-game-8/cast/imperius",
+            response_cast_imperio_bad2 = client.put(
+                "/test-expelliarmus/cast/imperius",
                 headers=p[minister_index],
                 json={"target_uname": unames[minister_index]}
             )
-            response_cast_imperio_bad3 = client.put(  # unexistent player
-                "/test-game-8/cast/imperius",
+            response_cast_imperio_bad3 = client.put(
+                "/test-expelliarmus/cast/imperius",
                 headers=p[minister_index],
                 json={"target_uname": "James Bond"}
             )
@@ -182,9 +237,9 @@ def test_all_for_8():
             assert response_cast_imperio_bad3.status_code == 404
             # ----------TESTING IMPERIUS BAD END-------------------------
             response_cast_imperio_good = client.put(
-                "/test-game-8/cast/imperius",
+                "/test-expelliarmus/cast/imperius",
                 headers=p[minister_index],
-                json={"target_uname": unames[(minister_index - 2) % 8]}
+                json={"target_uname": unames[(minister_index - 2) % 10]}
             )
             # print(response_cast_imperio_good.json())
             assert response_cast_imperio_good.status_code == 200
@@ -193,10 +248,10 @@ def test_all_for_8():
 
         if ((de_score == 4 and avadas_avaliables == 2) or
                 (de_score == 5 and avadas_avaliables == 1)):
-            victim_index = (minister_index - 1) % 8
+            victim_index = (minister_index - 1) % 10
             victim_uname = unames[victim_index]
             response_cast_avada = client.put(
-                "/test-game-8/cast/avada-kedavra",
+                "/test-expelliarmus/cast/avada-kedavra",
                 headers=p[minister_index],
                 json={"target_uname": victim_uname}
             )
@@ -210,4 +265,4 @@ def test_all_for_8():
         # print("--------------------------------------------------")
 
 
-# test_all_for_8()
+# test_expelliarmus()

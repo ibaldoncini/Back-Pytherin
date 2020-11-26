@@ -23,8 +23,9 @@ class DiscardRequest(BaseModel):
     """
     Body of the request used for discarding a card.
     Used by minister and director only.
+    If has te value 3, it means the director choose to cast expelliarmus.
     """
-    card_index: int = Field(..., ge=0, le=2,
+    card_index: int = Field(..., ge=0, le=3,
                             description="The index of the card to be discarded")
 
 
