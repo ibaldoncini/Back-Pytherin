@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 from enum import Enum, unique
 from datetime import datetime
 
@@ -32,6 +32,7 @@ class Room:
         self.owner: str = owner
         self.users: List[str] = []
         self.emails: List[str] = []
+        self.sockets = {}
         self.status: RoomStatus = RoomStatus.PREGAME
         self.game: Game = None
 
@@ -137,3 +138,13 @@ class Room:
             time = self.game.last_update
 
         return time
+
+    def can_user_chat(self, username: str):
+        in_room = username in self.users
+        socket_exists = username in self.sockets.keys()
+        if self.get_game() is None:
+            can_chat = True
+        else:
+            can_chat = self.get_game().player_can_speak(username)
+
+        return (in_room and socket_exists and can_chat)
