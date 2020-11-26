@@ -11,8 +11,8 @@ from classes.room import Room, RoomStatus
 from classes.room_hub import RoomHub
 from classes.role_enum import Role
 from classes.game_status_enum import GamePhase
-from classes.game import Vote
-from api.models.base import save_game_on_database, load_from_database, remove_room_from_database
+from classes.game import Vote, Game
+from api.models.base import db, save_game_on_database, load_from_database, remove_room_from_database
 
 router = APIRouter()
 hub = RoomHub()
