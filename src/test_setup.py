@@ -2,10 +2,10 @@
 from fastapi.testclient import TestClient
 from pony.orm import db_session, commit
 from api.models.base import db
-from test_main import test_app
+from test_main import test_app as app
+#from main import app
 
-
-client = TestClient(test_app)
+client = TestClient(app)
 
 
 def register(email: str):
@@ -94,6 +94,7 @@ for i in range(0, 12):
 
 assert register("player1@example.com").status_code == 409
 
+""" 
 create(p[0], "test-crucio", 7)
 for i in range(0, 7):
     rta = join(p[i], "test-crucio")
@@ -117,7 +118,7 @@ for i in range(0, 5):
 create(p[0], "test-game-8", 8)
 for i in range(0, 8):
     rta = join(p[i], "test-game-8")
-
+ """
 
 create(p[0], "test-game-10", 10)
 for i in range(0, 10):

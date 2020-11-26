@@ -70,7 +70,7 @@ async def cast_avada_kedavra(body: TargetedSpellRequest,
             detail="You're not allowed to do this", status_code=405)
 
 
-@ router.get("/{room_name}/cast/crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
+@ router.put("/{room_name}/cast/crucio", tags=["Spells"], status_code=status.HTTP_200_OK)
 async def cast_crucio(body: TargetedSpellRequest,
                       room_name: str = Path(...,
                                             min_length=6, max_length=20),
