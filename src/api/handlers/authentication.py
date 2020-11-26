@@ -1,7 +1,7 @@
 # authentication.py
 from fastapi import Depends, HTTPException, status
 from typing import Optional
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from api.models.user_models import Token

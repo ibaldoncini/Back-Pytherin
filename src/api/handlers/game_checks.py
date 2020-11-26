@@ -3,7 +3,6 @@ from api.handlers.authentication import *
 
 from classes.room import RoomStatus, Room
 from classes.room_hub import RoomHub
-from classes.game import Game
 
 
 def check_game_preconditions(username: str, room_name: str, hub: RoomHub):

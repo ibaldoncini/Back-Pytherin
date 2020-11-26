@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Path
 from fastapi_utils.tasks import repeat_every
 from datetime import datetime, timedelta
 
-from api.models.room_models import VoteRequest, RoomCreationRequest, TargetedSpellRequest, ProposeDirectorRequest, DiscardRequest
+from api.models.room_models import VoteRequest, RoomCreationRequest, ProposeDirectorRequest, DiscardRequest
 from api.handlers.authentication import valid_credentials, get_username_from_token
 from api.handlers.game_checks import check_game_preconditions
 from api.utils.room_utils import check_email_status, votes_to_json
@@ -11,8 +11,8 @@ from classes.room import Room, RoomStatus
 from classes.room_hub import RoomHub
 from classes.role_enum import Role
 from classes.game_status_enum import GamePhase
-from classes.game import Vote, Game
-from api.models.base import db, save_game_on_database, load_from_database, remove_room_from_database
+from classes.game import Vote
+from api.models.base import save_game_on_database, load_from_database, remove_room_from_database
 
 router = APIRouter()
 hub = RoomHub()
@@ -409,13 +409,4 @@ async def discard(body: DiscardRequest,
     else:
         raise HTTPException(
             detail="You're not allowed to do this", status_code=405)
-
-
-@router.put("/{room_name}/rt",tags=["Debug"],status_code=200)
-async def restart_turn (room_name: str = Path(...,min_length=6,max_length=20)
-                        ,username : str = Depends(get_username_from_token)):
-    room = check_game_preconditions(username, room_name, hub)
-    game = room.get_game()
-    game.restart_turn()
-
 

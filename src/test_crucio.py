@@ -1,8 +1,8 @@
-from random import randint, random
-from fastapi.param_functions import Header
+from random import randint
 from fastapi.testclient import TestClient
 from test_main import test_app
 from test_setup import p, unames, start_game, vote
+from api.handlers.authentication import get_username_from_token
 
 
 client = TestClient(test_app)
@@ -15,13 +15,6 @@ DE_WIN = "DE WIN"
 VOL_WIN = "VOL WIN"
 TC : str = "test-crucio"
 TC9 : str = "test-crucio-9"
-
-def restart_turn (room_name):
-    response = client.put(
-        room_name + "/rt",
-        headers=owner
-    )
-    assert response.status_code == 200
 
 
 def get_game_state (header=owner,room_name = TC):
@@ -89,7 +82,7 @@ def discard (minister_index,card_index = 0,room_name = TC):
 
 def cast_crucio (minister_index,victim_index,room_name = TC):
     response = client.get(
-        room_name + "/cast/crucio",
+        "/" + room_name + "/cast/crucio",
         headers = p[minister_index],
         json={"target_uname" : unames[victim_index]}
     )
@@ -140,7 +133,7 @@ def test_kys_5 ():
     print(response_get_pregame1.json())
     assert response_get_pregame1.status_code == 200
 
-    response_start = start_game(p[0], TC)
+    response_start = start_game(owner, TC)
     print(response_start.json())
     assert response_start.status_code == 201
     voldemort_uname = get_voldi()
@@ -148,14 +141,12 @@ def test_kys_5 ():
 
     round_count = 0
     de_score = 0
-    fo_score = 0
 
     while de_score <= 2:
         round_count += 1
         print("Round count " + str(round_count))
         response_get_ingame = get_game_state()
         assert response_get_ingame.status_code == 200
-        print(response_get_ingame.json())
 
         rta: dict = response_get_ingame.json()
         minister_uname: str = rta["minister"]
@@ -164,6 +155,7 @@ def test_kys_5 ():
         director_uname: str = unames[director_index]
         alive_lads = rta["player_list"]
         de_procs = rta['de_procs']
+        
 
         respone_propose = propose_director(director_uname,minister_index)
         assert respone_propose.status_code == 201
@@ -213,9 +205,11 @@ def test_kys_5 ():
             
         else:
             print(response_cast_crucio.status_code)
-            assert response_cast_crucio.status_code == 400
+            assert (response_cast_crucio.status_code == 400 or
+                    response_cast_crucio.status_code == 405) 
 
         confirm = confirm_crucio(minister_index)
+
 
 
 def test_happy_path_9 ():

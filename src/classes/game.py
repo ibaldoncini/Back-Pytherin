@@ -383,7 +383,6 @@ class Game:
     def crucio (self,victim_uname : str):
         victim = self.__get_player_by_uname(victim_uname)
         self.investigated_players.append(victim_uname)
-        #self.restart_turn()
         return victim.get_loyalty().value
 
     

@@ -1,5 +1,4 @@
-from enum import Enum, unique, auto
-
+from enum import Enum
 
 class Spell(Enum):
     """ Enum for spell representation"""
