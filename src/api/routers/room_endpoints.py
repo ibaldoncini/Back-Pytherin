@@ -229,7 +229,7 @@ async def get_game_state(
             "phase": game.get_phase(),
             "player_list": game.get_alive_players(),
             "votes": votes_to_json(game.get_votes()),
-            "chaos": game.get_chaos()
+            "chaos": game.get_chaos(),
             "messages": room.get_messages()
         }
         return json_r
