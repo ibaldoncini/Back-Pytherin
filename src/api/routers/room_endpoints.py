@@ -421,6 +421,16 @@ async def discard(body: DiscardRequest,
         else:
             raise HTTPException(
                 detail="Something went fucking wrong mate", status_code=500)
+
+    elif (phase == GamePhase.REJECTED_EXPELLIARMUS and
+          game.get_director_user() == username):
+        if (body.card_index not in [0, 1]):
+            raise HTTPException(
+                detail="Index out of bounds", status_code=400)
+        else:
+            game.discard(body.card_index)
+            game.proc_leftover_card()
+            return {"message": "Successfully discarded"}
     else:
         raise HTTPException(
             detail="You're not allowed to do this", status_code=405)

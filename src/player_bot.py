@@ -42,6 +42,13 @@ while True:
     minister = state["minister"]
     director = state["director"]
     my_role = state["my_role"]
+    de_score = state["de_procs"]
+
+    prob = randint(1, 4)
+    if prob == 1:
+        vote = 'Nox'
+    else:
+        vote = 'Lumos'
 
     print(f"\nMy name is: {nick}, minister : {minister}, phase: {phase}")
 
@@ -51,11 +58,6 @@ while True:
                      headers=header)
 
     elif (str(phase) == str(GamePhase.VOTE_DIRECTOR.value)):
-        prob = randint(1, 4)
-        if prob == 1:
-            vote = 'Nox'
-        else:
-            vote = 'Lumos'
         requests.put(f"{url}/{room_name}/vote",
                      json={"vote": vote},
                      headers=header)
@@ -66,6 +68,16 @@ while True:
                      headers=header)
 
     elif (str(phase) == str(GamePhase.DIRECTOR_DISCARD.value) and nick == director):
+        if de_score == 5:
+            requests.put(f"{url}/{room_name}/discard",
+                         json={"card_index": "3"},
+                         headers=header)
+        else:
+            requests.put(f"{url}/{room_name}/discard",
+                         json={"card_index": "1"},
+                         headers=header)
+
+    elif (str(phase) == str(GamePhase.REJECTED_EXPELLIARMUS.value) and nick == director):
         requests.put(f"{url}/{room_name}/discard",
                      json={"card_index": "1"},
                      headers=header)
@@ -91,6 +103,12 @@ while True:
     elif (str(phase) == str(GamePhase.CAST_AVADA_KEDAVRA.value) and nick == minister):
         requests.put(f"{url}/{room_name}/cast/avada-kedavra",
                      json={"target_uname": unames[randint(0, nof_players)]},
+                     headers=header)
+
+    elif (str(phase) == str(GamePhase.CONFIRM_EXPELLIARMUS.value) and nick == minister):
+        print("Something")
+        requests.put(f"{url}/{room_name}/expelliarmus",
+                     json={"vote": vote},
                      headers=header)
 
     elif (str(phase) == str(GamePhase.DE_WON.value) or str(phase) == str(GamePhase.FO_WON.value)):

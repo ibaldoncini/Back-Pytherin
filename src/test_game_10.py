@@ -141,7 +141,7 @@ def test_all_for_10():
             # print(f"Death Eaters: {de_score} , Phoenix Order: {fo_score}")
 
         if (de_score == 1 and crucio_availables > 1):
-            response_cast_crucio = client.get(
+            response_cast_crucio = client.put(
                 "/test-game-10/cast/crucio",
                 headers=p[minister_index],
                 json={"target_uname": unames[(minister_index - 2) % 10]}
@@ -149,7 +149,7 @@ def test_all_for_10():
             # print(response_cast_crucio.json())
             assert response_cast_crucio.status_code == 200
         elif (de_score == 2 and crucio_availables > 0):
-            response_cast_crucio = client.get(
+            response_cast_crucio = client.put(
                 "/test-game-10/cast/crucio",
                 headers=p[minister_index],
                 json={"target_uname": unames[(minister_index - 2) % 10]}

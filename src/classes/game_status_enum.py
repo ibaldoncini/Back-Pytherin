@@ -16,6 +16,7 @@ class GamePhase(Enum):
     CAST_IMPERIUS = auto()          # 9
     CAST_CRUCIO = auto()            # 10
     CONFIRM_EXPELLIARMUS = auto()   # 11
+    REJECTED_EXPELLIARMUS = auto()  # 12
 
     def __str__(self):
         return self.name

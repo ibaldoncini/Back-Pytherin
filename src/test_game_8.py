@@ -141,7 +141,7 @@ def test_all_for_8():
             # print(f"Death Eaters: {de_score} , Phoenix Order: {fo_score}")
 
         if de_score == 2:
-            response_cast_crucio = client.get(
+            response_cast_crucio = client.put(
                 "/test-game-8/cast/crucio",
                 headers=p[minister_index % 8],
                 json={"target_uname": unames[(minister_index - 2) % 8]}
