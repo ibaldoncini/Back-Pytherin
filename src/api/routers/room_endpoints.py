@@ -159,7 +159,6 @@ async def get_game_state(
             max_length=20,
             description="The room wich you want to get the game state of",
         ),
-        email: str = Depends(valid_credentials),
         username: str = Depends(get_username_from_token)):
 
     """
@@ -217,6 +216,7 @@ async def get_game_state(
             "my_role": my_role,
             "death_eaters": de_list,
             "voldemort": voldemort,
+            "n_of_players": room.get_user_count(),
             "minister": game.get_minister_user(),
             "director": game.get_director_user(),
             "last_minister": game.get_last_minister_user(),
@@ -452,4 +452,3 @@ async def confirm_expelliarmus(body: VoteRequest,
         raise HTTPException(
             status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
             detail="Game is not in expelliarmus phase")
-
