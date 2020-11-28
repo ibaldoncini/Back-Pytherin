@@ -34,7 +34,7 @@ async def send_message(body: ChatRequest,
         raise HTTPException(detail="Room not found",
                             status_code=status.HTTP_404_NOT_FOUND)
     elif room.can_user_chat(username):
-        room.post_message(body.msg)
+        room.post_message(username + " :" + body.msg)
         return {"message": "Message sent succesfully"}
     else:
         raise HTTPException(detail="You can't chat right now",
