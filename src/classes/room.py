@@ -32,9 +32,10 @@ class Room:
         self.owner: str = owner
         self.users: List[str] = []
         self.emails: List[str] = []
-        self.sockets = {}
+        #self.sockets = {}
         self.status: RoomStatus = RoomStatus.PREGAME
         self.game: Game = None
+        self.messages: List[str] = []
 
     async def user_join(self, user: str, email: str):
         """
@@ -141,10 +142,20 @@ class Room:
 
     def can_user_chat(self, username: str):
         in_room = username in self.users
-        socket_exists = username in self.sockets.keys()
+        #socket_exists = username in self.sockets.keys()
         if self.get_game() is None:
             can_chat = True
-        else:
+        elif in_room:
             can_chat = self.get_game().player_can_speak(username)
+        else:
+            can_chat = False
 
-        return (in_room and socket_exists and can_chat)
+        return (in_room and can_chat)
+
+    def post_message(self, msg):
+        self.messages.append(msg)
+        if (len(self.messages) > 32):
+            self.messages.pop(0)
+
+    def get_messages(self):
+        return self.messages

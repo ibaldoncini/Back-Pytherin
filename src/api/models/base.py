@@ -32,6 +32,7 @@ def define_database_and_entities(**db_params):
         owner = Required(str)
         status = Required(str)
         users = Required(Json)
+        emails = Required(Json)
         game = Required(Json)
 
     class Validation_Tuple (db.Entity):
@@ -59,7 +60,8 @@ def load_from_database():
     rooms = []
     for room in db_rooms:
         new_room = Room(room.name, room.max_players, room.owner)
-        new_room.users = room.users
+        new_room.users = room.users["users"]
+        new_room.emails = room.emails["emails"]
         if room.status == RoomStatus.PREGAME.value:
             new_room.set_status(RoomStatus.PREGAME)
         elif room.status == RoomStatus.IN_GAME.value:
@@ -84,7 +86,8 @@ async def save_game_on_database(room: Room):
             if (db.exists("select * from DB_Room where name = $room_name")):
                 db_room = db.DB_Room.get(name=room_name)
                 db_room.set(status=room.get_status().value)
-                db_room.set(users=room.get_user_list())
+                db_room.set(users={"users": room.get_user_list()})
+                db_room.set(emails={"emails": room.get_emails_list()})
                 db_room.set(game=json_r)
                 db_room.set(owner=room.get_owner())
             else:
@@ -93,7 +96,8 @@ async def save_game_on_database(room: Room):
                     max_players=room.get_max_players(),
                     owner=room.get_owner(),
                     status=room.get_status().value,  # MEJORAR
-                    users={},
+                    users={"users": []},
+                    emails={"emails": []},
                     game={}
                 )
     except Exception as e:

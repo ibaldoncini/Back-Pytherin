@@ -195,7 +195,7 @@ async def get_game_state(
         raise HTTPException(status_code=403,
                             detail="You're not in this room")
     elif room.status == RoomStatus.PREGAME:
-        return {"room_status": room.status, "users": room.users, "owner": room.owner}
+        return {"room_status": room.status, "users": room.users, "owner": room.owner, "messages": room.get_messages()}
     else:
         room.update_status()
         game = room.get_game()
@@ -230,6 +230,7 @@ async def get_game_state(
             "player_list": game.get_alive_players(),
             "votes": votes_to_json(game.get_votes()),
             "chaos": game.get_chaos()
+            "messages": room.get_messages()
         }
         return json_r
 

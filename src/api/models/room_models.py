@@ -44,3 +44,11 @@ class TargetedSpellRequest(BaseModel):
     """
     target_uname: str = Field(...,
                               description="The email of the user to receive the spell")
+
+
+class ChatRequest(BaseModel):
+    """
+    Body of the request used for sending messages to the chat.
+    """
+    msg: str = Field(..., max_length=256, min_length=1,
+                     description="The message you want to send")
