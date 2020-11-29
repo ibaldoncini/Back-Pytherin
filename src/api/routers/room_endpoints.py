@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends, Path
+from fastapi import APIRouter, HTTPException, status, Depends, Path, WebSocket, WebSocketDisconnect
 from fastapi_utils.tasks import repeat_every
 from datetime import datetime, timedelta
 
@@ -6,6 +6,9 @@ from api.models.room_models import VoteRequest, RoomCreationRequest, ProposeDire
 from api.handlers.authentication import valid_credentials, get_username_from_token
 from api.handlers.game_checks import check_game_preconditions
 from api.utils.room_utils import check_email_status, votes_to_json
+from datetime import datetime, timedelta
+from typing import List
+from fastapi.responses import HTMLResponse
 
 from classes.room import Room, RoomStatus
 from classes.room_hub import RoomHub
@@ -192,7 +195,7 @@ async def get_game_state(
         raise HTTPException(status_code=403,
                             detail="You're not in this room")
     elif room.status == RoomStatus.PREGAME:
-        return {"room_status": room.status, "users": room.users, "owner": room.owner}
+        return {"room_status": room.status, "users": room.users, "owner": room.owner, "messages": room.get_messages()}
     else:
         room.update_status()
         game = room.get_game()
@@ -226,7 +229,8 @@ async def get_game_state(
             "phase": game.get_phase(),
             "player_list": game.get_alive_players(),
             "votes": votes_to_json(game.get_votes()),
-            "chaos": game.get_chaos()
+            "chaos": game.get_chaos(),
+            "messages": room.get_messages()
         }
         return json_r
 

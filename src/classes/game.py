@@ -365,3 +365,12 @@ class Game:
         else:
             self.set_phase(GamePhase.REJECTED_EXPELLIARMUS)
             pass
+    
+    def player_can_speak(self, user: str):
+        role_bool = user in [
+            self.get_minister_user(), self.get_director_user()]
+        phase_bool = self.get_phase() in [
+            GamePhase.MINISTER_DISCARD, GamePhase.DIRECTOR_DISCARD]
+        is_dead = not (self.__get_player_by_email(user).is_player_alive())
+
+        return (not ((role_bool and phase_bool) or is_dead))
