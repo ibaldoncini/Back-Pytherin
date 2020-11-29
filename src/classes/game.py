@@ -373,4 +373,4 @@ class Game:
             GamePhase.MINISTER_DISCARD, GamePhase.DIRECTOR_DISCARD]
         is_dead = not (self.__get_player_by_email(user).is_player_alive())
 
-        return (role_bool and phase_bool) or is_dead
+        return (not ((role_bool and phase_bool) or is_dead))
