@@ -11,27 +11,11 @@ def test_chaos():
         headers=p[0]
     )
     assert response_get_pregame1.status_code == 200
-    ##print(response_get_pregame1.json())
+    # print(response_get_pregame1.json())
 
     response_start = start_game(p[0], "test-chaos")
-    #print(response_start.json())
+    print(response_start.json())
     # assert response_start.status_code == 201
-
-    #Find who voldemort is 
-    voldemort_uname = ""
-    for k in range(0, 5):
-        response_get_game = client.get(
-            "/test-chaos/game_state",
-            headers=p[k]
-        )
-        assert response_get_game.status_code == 200
-        rta: dict = response_get_game.json()
-
-        if rta['my_role'] == "Voldemort":
-            voldemort_uname = unames[k]
-        else:
-            pass
-    # #print(f"Voldemort is: {voldemort_uname}")
 
     round_count = 0
     game_is_not_over = True
@@ -49,7 +33,7 @@ def test_chaos():
 
         rta: dict = response_get_ingame.json()
         #print(f"\nStart of round {round_count}")
-        #print(rta)
+        # print(rta)
         minister_uname: str = rta["minister"]
         minister_index = unames.index(minister_uname)
         director_index = (minister_index + 1) % 5
@@ -68,11 +52,11 @@ def test_chaos():
         if round_count == 2:
             for i in range(0, 5):
                 if unames[i] in alive_lads:
-                    vote(header=p[i], vote="Lumos",room_name="test-chaos")
+                    vote(header=p[i], vote="Lumos", room_name="test-chaos")
             response_get_cards1 = client.get(
-            "test-chaos/cards",
-            headers=p[minister_index]
-            )   
+                "test-chaos/cards",
+                headers=p[minister_index]
+            )
             assert response_get_cards1.status_code == 200
 
             response_discard1 = client.put(
@@ -97,7 +81,7 @@ def test_chaos():
         else:
             for i in range(0, 5):
                 if unames[i] in alive_lads:
-                    vote(header=p[i], vote="Nox",room_name="test-chaos")
+                    vote(header=p[i], vote="Nox", room_name="test-chaos")
 
         response_get_ingame2 = client.get(
             "/test-chaos/game_state",
@@ -105,7 +89,7 @@ def test_chaos():
         )
         assert response_get_ingame2.status_code == 200
         #print("\nAfter the voting")
-        #print(response_get_ingame2.json())
+        # print(response_get_ingame2.json())
 
         response_post_proclamation = client.get(
             "/test-chaos/game_state",

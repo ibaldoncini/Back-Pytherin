@@ -81,7 +81,7 @@ def discard(minister_index, card_index=0, room_name=TC):
 
 
 def cast_crucio(minister_index, victim_index, room_name=TC):
-    response = client.get(
+    response = client.put(
         "/" + room_name + "/cast/crucio",
         headers=p[minister_index],
         json={"target_uname": unames[victim_index]}
@@ -191,9 +191,6 @@ def test_kys_5():
         response_cast_crucio = cast_crucio(minister_index, minister_index)
 
         de_score = scores_state["de_procs"]
-
-        response_get_ingame3 = get_game_state()
-        # print(response_get_ingame3.json())
 
         if (de_score == 2 and first):
             # print(response_cast_crucio.status_code)

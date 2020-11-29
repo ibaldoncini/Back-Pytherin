@@ -69,7 +69,7 @@ class Game:
 
     def build_from_json(self, json):
         players = []
-        for user in self.users:
+        for user in json["player_list"]:
             new_player = Player(user)
             if user not in json["death_eaters"]:
                 new_player.set_loyalty(Loyalty.FENIX_ORDER)
@@ -80,9 +80,6 @@ class Game:
                     new_player.set_role(Role.VOLDEMORT)
                 else:
                     new_player.set_role(Role.DEATH_EATER)
-
-            if user not in json["player_list"]:
-                new_player.kill()
 
             players.append(new_player)
 
@@ -105,7 +102,7 @@ class Game:
             else:
                 cards.append(Card.DE)
         self.cards = cards
-
+        self.players = players
         self.deck.load_deck(json["deck_cards"])
         # Maybe set phase using the phase field in the json?
         if json["phase"] == GamePhase.PROPOSE_DIRECTOR.value:
@@ -365,12 +362,12 @@ class Game:
         else:
             self.set_phase(GamePhase.REJECTED_EXPELLIARMUS)
             pass
-    
+
     def player_can_speak(self, user: str):
         role_bool = user in [
             self.get_minister_user(), self.get_director_user()]
         phase_bool = self.get_phase() in [
             GamePhase.MINISTER_DISCARD, GamePhase.DIRECTOR_DISCARD]
-        is_dead = not (self.__get_player_by_email(user).is_player_alive())
+        is_dead = not (self.__get_player_by_uname(user).is_player_alive())
 
         return (not ((role_bool and phase_bool) or is_dead))

@@ -1,5 +1,5 @@
 # users.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse
 from datetime import datetime, timedelta
@@ -20,7 +20,7 @@ router = APIRouter()
 
 
 @router.post("/users/register", tags=["Users"], status_code=201)
-async def register(user: User):
+async def register(user: User, background_t: BackgroundTasks):
     """
     User register endpoint
     Params: User data->
@@ -40,7 +40,7 @@ async def register(user: User):
             )
 
         validator = Validation()
-        validator.send_mail(user.email)
+        background_t.add_task(validator.send_mail, user.email)
 
         return {
             "message": user.username

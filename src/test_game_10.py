@@ -14,7 +14,7 @@ def test_all_for_10():
     assert response_get_pregame1.status_code == 200
 
     response_start = start_game(p[0], "test-game-10")
-    # print(response_start.json())
+    print(response_start.json())
     #assert response_start.status_code == 201
 
     voldemort_uname = ""
@@ -228,4 +228,4 @@ def test_all_for_10():
         # print("--------------------------------------------------")
 
 
-test_all_for_10()
+# test_all_for_10()
