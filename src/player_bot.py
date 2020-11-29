@@ -3,8 +3,20 @@ from test_setup import p as players
 from test_setup import unames
 from classes.game_status_enum import GamePhase
 from time import sleep
-from random import randint
+from random import randint, choice
 import sys
+
+
+messages: list = [
+    "You most realize, you are doomed",
+    "A surprise to be sure, but a welcome one",
+    "This is where the fun begins",
+    "DO IT",
+    "There's Always A Bigger Fish",
+    "I Don't Like Sand. It's Coarse And Rough And Irritating And It Gets Everywhere.",
+    "Join me, and together we can rule the galaxy",
+    "Did You Ever Hear The Tragedy Of Darth Plagueis The Wise?"
+]
 
 room_name = sys.argv[1]
 index_in = sys.argv[2]
@@ -22,7 +34,8 @@ url = "http://127.0.0.1:8000"
 
 
 join = requests.get(f"{url}/room/join/{room_name}", headers=header)
-
+chat = requests.put(f"{url}/{room_name}/chat", json={"msg": "Hello There!"},
+                    headers=header)
 
 game_not_begun = True
 while game_not_begun:
@@ -30,6 +43,11 @@ while game_not_begun:
     r = requests.get(f"{url}/{room_name}/game_state", headers=header)
     state = r.json()
     if (state['room_status'] == "In game"):
+        prob = randint(1, 4)
+        sleep(prob)
+        chat = requests.put(f"{url}/{room_name}/chat",
+                            json={"msg": choice(messages)},
+                            headers=header)
         game_not_begun = False
         break
 
@@ -101,8 +119,12 @@ while True:
                      headers=header)
 
     elif (str(phase) == str(GamePhase.CAST_AVADA_KEDAVRA.value) and nick == minister):
+        victim = unames[randint(0, nof_players)]
         requests.put(f"{url}/{room_name}/cast/avada-kedavra",
-                     json={"target_uname": unames[randint(0, nof_players)]},
+                     json={"target_uname": victim},
+                     headers=header)
+        requests.put(f"{url}/{room_name}/chat",
+                     json={"msg": f"It's over {victim}, i have the high ground"},
                      headers=header)
 
     elif (str(phase) == str(GamePhase.CONFIRM_EXPELLIARMUS.value) and nick == minister):

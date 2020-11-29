@@ -184,7 +184,8 @@ async def get_game_state(
                      minister discard ,director discard, (1,2,3,4) respectively,
             "player_list": the players in the game,
             "votes": the player votes for this turn,
-            "chaos": the chaos counter.
+            "chaos": the chaos counter,
+            "messages" : The chat.
 
     Or it will return the winner if the game is over
     """

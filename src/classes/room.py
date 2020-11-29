@@ -93,6 +93,7 @@ class Room:
     def start_game(self):
         self.game = Game(self.users)
         self.status = RoomStatus.IN_GAME
+        self.messages.clear()
         # Obviously is not finished.
 
     def get_game(self):
