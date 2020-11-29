@@ -26,7 +26,7 @@ async def send_message(body: ChatRequest,
                        room_name: str = Path(...,
                                              min_length=6,
                                              max_length=20,
-                                             description="The name of the room you want to leave"),
+                                             description="The name of the room you want to post a message to the chat"),
                        username: str = Depends(get_username_from_token)):
 
     room = hub.get_room_by_name(room_name)
