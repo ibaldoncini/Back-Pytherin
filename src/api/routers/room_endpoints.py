@@ -360,7 +360,8 @@ async def get_cards(
     minister = game.get_minister_user()
     director = game.get_director_user()
     if ((phase == GamePhase.MINISTER_DISCARD and minister == username) or
-            (phase == GamePhase.DIRECTOR_DISCARD and director == username)):
+            (phase == GamePhase.DIRECTOR_DISCARD and director == username) or
+            (phase == GamePhase.REJECTED_EXPELLIARMUS and director == username)):
         return {"cards": game.get_cards()}
     else:
         raise HTTPException(
