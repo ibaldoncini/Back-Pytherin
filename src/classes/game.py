@@ -12,6 +12,7 @@ from classes.deck import Deck, Card
 from classes.game_status_enum import GamePhase
 from classes.spell import Spell
 from asyncio import sleep as async_sleep
+from time import sleep
 
 
 class Vote(Enum):
@@ -255,10 +256,8 @@ class Game:
     def reset_chaos(self):
         self.chaos_counter = 0
 
-    async def do_chaos(self):
+    def do_chaos(self):
         self.proc_top_card()
-        # To simplify things to front-end
-        await async_sleep(3)
         # Just decrease the spell number
         self.board.spell_check(self.n_of_players)
 
@@ -283,7 +282,7 @@ class Game:
             self.set_director(None)
             self.increase_chaos()
             if self.get_chaos() == 3:
-                await self.do_chaos()
+                self.do_chaos()
             self.restart_turn()
 
     def proc_leftover_card(self):
