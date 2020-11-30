@@ -1,6 +1,7 @@
 import requests
-from test_setup import p as players
-from test_setup import unames
+# from test_setup import p as players
+# from test_setup import f"player{
+from test_setup import login
 from classes.game_status_enum import GamePhase
 from time import sleep
 from random import randint, choice
@@ -8,14 +9,15 @@ import sys
 
 
 messages: list = [
-    "You most realize, you are doomed",
-    "A surprise to be sure, but a welcome one",
-    "This is where the fun begins",
-    "DO IT",
+    "Dobby is free!",
+    "I solemnly swear I am up to no good",
+    "Don’t let the muggles get you down",
+    "Training for the ballet, Potter?",
     "There's Always A Bigger Fish",
-    "I Don't Like Sand. It's Coarse And Rough And Irritating And It Gets Everywhere.",
-    "Join me, and together we can rule the galaxy",
-    "Did You Ever Hear The Tragedy Of Darth Plagueis The Wise?"
+    "Anyone can speak Troll. All you have to do is point and grunt",
+    "I mean, it's sort of exciting, isn't it, breaking the rules?",
+    "I am a wizard, not a baboon brandishing a stick.",
+    "It is the quality of one’s convictions that determines success, not the number of followers"
 ]
 
 room_name = sys.argv[1]
@@ -27,8 +29,8 @@ print(f"Number of player: {nof_players}")
 
 
 index = int(index_in)
-header = players[index]
-nick = unames[index]
+header = login(f"player{index}@example.com")  # players[index]
+nick = (f"player{index}")
 
 url = "http://127.0.0.1:8000"
 
@@ -72,7 +74,8 @@ while True:
 
     if (str(phase) == str(GamePhase.PROPOSE_DIRECTOR.value) and nick == minister):
         requests.put(f"{url}/{room_name}/director",
-                     json={"director_uname": unames[randint(0, nof_players)]},
+                     json={
+                         "director_uname": f"player{randint(0, nof_players)}"},
                      headers=header)
 
     elif (str(phase) == str(GamePhase.VOTE_DIRECTOR.value)):
@@ -102,7 +105,8 @@ while True:
 
     elif (str(phase) == str(GamePhase.CAST_CRUCIO.value) and nick == minister):
         requests.put(f"{url}/{room_name}/cast/crucio",
-                     json={"target_uname": unames[randint(0, nof_players)]},
+                     json={
+                         "target_uname": f"player{randint(0, nof_players)}"},
                      headers=header)
         requests.put(f"{url}/{room_name}/cast/confirm-crucio",
                      headers=header)
@@ -115,16 +119,18 @@ while True:
 
     elif (str(phase) == str(GamePhase.CAST_IMPERIUS.value) and nick == minister):
         requests.put(f"{url}/{room_name}/cast/imperius",
-                     json={"target_uname": unames[randint(0, nof_players)]},
+                     json={
+                         "target_uname": f"player{randint(0, nof_players)}"},
                      headers=header)
 
     elif (str(phase) == str(GamePhase.CAST_AVADA_KEDAVRA.value) and nick == minister):
-        victim = unames[randint(0, nof_players)]
+        victim = f"player{randint(0, nof_players)}"
         requests.put(f"{url}/{room_name}/cast/avada-kedavra",
                      json={"target_uname": victim},
                      headers=header)
         requests.put(f"{url}/{room_name}/chat",
-                     json={"msg": f"It's over {victim}, i have the high ground"},
+                     json={
+                         "msg": f"You’re a fool {victim}, and you will lose everything"},
                      headers=header)
 
     elif (str(phase) == str(GamePhase.CONFIRM_EXPELLIARMUS.value) and nick == minister):

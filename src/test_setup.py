@@ -85,6 +85,16 @@ def vote(header: str, vote: str, room_name: str):
     return response
 
 
+response = client.post(
+    "/users/register",
+    json={
+        "username": "unconfirmed",
+        "email": "unconfirmed@example.com",
+        "password": "Heladera65",
+        "icon": "string",
+    })
+
+
 p = []
 unames = []
 for i in range(0, 12):
