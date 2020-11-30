@@ -84,8 +84,15 @@ async def validate_user(email: str, code: str):
         <head>
             <title>Secret voldemort</title>
         </head>
-        <body>
-            <h1>Verified!</h1>
+        <body style="background-color:black; text-align: center;">
+            <h1 style="color: goldenrod; padding-top: 60px; text-shadow:1px 1px 2px darkgoldenrod;" >Email Verified!</h1>
+            <h5 style="color: goldenrod;text-shadow:1px 1px 2px darkgoldenrod;" >
+                You can start playing now!
+            </h5>
+            <div>
+                <img src="https://images-ext-2.discordapp.net/external/TKE5N1VRYV4jDNc2EFBou31abWc9yuAi3J5zP3gztAc/https/1000logos.net/wp-content/uploads/2018/08/Hogwarts-Logo.jpg"; style="width: 800px;height: 400px;">
+                </img>
+            </div>
         </body>
     </html>
     """
