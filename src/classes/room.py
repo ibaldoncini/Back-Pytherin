@@ -129,7 +129,8 @@ class Room:
                     "deck_cards": game.get_deck(),
                     "game_cards": list(map(lambda c: c.value, game.get_cards())),
                     "spells": game.get_board_spells(),
-                    "phase": game.get_phase().value}
+                    "phase": game.get_phase().value,
+                    "chaos": game.get_chaos()}
         else:
             json = {}
         return json

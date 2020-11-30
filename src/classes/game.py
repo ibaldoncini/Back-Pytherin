@@ -84,6 +84,7 @@ class Game:
 
             players.append(new_player)
 
+        self.chaos_counter = json["chaos"]
         self.minister = next(
             (p for p in self.players if p.get_user() == json["minister"]), None)
         self.director = next(
