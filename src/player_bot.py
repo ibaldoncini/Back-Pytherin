@@ -1,11 +1,29 @@
-import requests
-# from test_setup import p as players
-# from test_setup import f"player{
-from test_setup import login
-from classes.game_status_enum import GamePhase
-from time import sleep
-from random import randint, choice
 import sys
+from random import randint, choice
+from time import sleep
+from classes.game_status_enum import GamePhase
+import requests
+
+
+def login(email):
+    response_login = requests.post(
+        "http://127.0.0.1:8000/users",
+        data={
+            "grant_type": "",
+            "username": email,
+            "password": "Heladera65",
+            "scope": "",
+            "client_id": "",
+            "client_secret": "",
+        },
+    )
+    assert response_login.status_code == 200
+    rta: dict = response_login.json()
+    token: str = rta["access_token"]
+    token_type: str = "Bearer "
+    head: str = token_type + token
+
+    return {"accept": "application/json", "Authorization": head}
 
 
 messages: list = [
@@ -29,16 +47,18 @@ print(f"Number of player: {nof_players}")
 
 
 index = int(index_in)
+print("prelogin")
 header = login(f"player{index}@example.com")  # players[index]
+print("postlogin")
 nick = (f"player{index}")
 
 url = "http://127.0.0.1:8000"
 
-
+print("prejoin")
 join = requests.get(f"{url}/room/join/{room_name}", headers=header)
+print("post join")
 chat = requests.put(f"{url}/{room_name}/chat", json={"msg": "Hello There!"},
                     headers=header)
-
 game_not_begun = True
 while game_not_begun:
     sleep(3)
