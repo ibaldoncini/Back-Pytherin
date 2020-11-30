@@ -1,12 +1,13 @@
+from fastapi import APIRouter, HTTPException, status, Depends, Path
 
-from api.models.room_models import TargetedSpellRequest
+from api.models.room_models import TargetedSpellRequest, VoteRequest
 from api.handlers.authentication import get_username_from_token
 from api.handlers.game_checks import check_game_preconditions
 from api.routers.room_endpoints import hub
+from classes.game import Vote
 
 from classes.game_status_enum import GamePhase
 
-from fastapi import APIRouter, HTTPException, status, Depends, Path
 
 router = APIRouter()
 
@@ -153,3 +154,31 @@ async def cast_imperius(body: TargetedSpellRequest,
     else:
         raise HTTPException(
             detail="You're not allowed to do this", status_code=405)
+
+
+@ router.put("/{room_name}/expelliarmus", tags=["Spells"], status_code=status.HTTP_200_OK)
+async def confirm_expelliarmus(body: VoteRequest,
+                               room_name: str = Path(
+                                   ...,
+                                   min_length=6,
+                                   max_length=20,
+                               ),
+                               username: str = Depends(get_username_from_token)):
+    """
+    Endpoint used by the minister to confirm the Expelliarmus Spell
+    """
+    room = check_game_preconditions(username, room_name, hub)
+    game = room.get_game()
+    phase = game.get_phase()
+    minister = game.get_minister_user()
+    if (phase == GamePhase.CONFIRM_EXPELLIARMUS and minister == username):
+        if body.vote not in [Vote.LUMOS.value, Vote.NOX.value]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid selection")
+        else:
+            game.expelliarmus(body.vote)
+            return {"message": "Expelliarmus! confirmation received"}
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+            detail="Game is not in expelliarmus phase")

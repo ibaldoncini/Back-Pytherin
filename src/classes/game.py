@@ -146,11 +146,11 @@ class Game:
         else:
             return (self.director.get_user())
 
-    def set_director(self, email):
-        if email is None:
+    def set_director(self, uname):
+        if uname is None:
             self.director = None
         else:
-            self.director = self.__get_player_by_uname(email)
+            self.director = self.__get_player_by_uname(uname)
 
     def get_last_minister_user(self):
         if self.last_minister is None:
@@ -209,12 +209,12 @@ class Game:
         alive_players = filter(lambda p: p.is_player_alive(), all_players)
         return list(map(lambda p: p.get_user(), alive_players))
 
-    def __get_player_by_uname(self, email: str):
-        player = next(p for p in self.players if p.get_user() == email)
+    def __get_player_by_uname(self, uname: str):
+        player = next(p for p in self.players if p.get_user() == uname)
         return player
 
-    def get_player_role(self, email: str):
-        return self.__get_player_by_uname(email).get_role()
+    def get_player_role(self, uname: str):
+        return self.__get_player_by_uname(uname).get_role()
 
     def get_de_list(self):
         filtered = filter(lambda p:  p.get_loyalty() ==

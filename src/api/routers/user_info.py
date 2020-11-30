@@ -33,7 +33,6 @@ async def change_psw(new_password_request: NewPassword, user: User = Depends(get
         new_hash = get_password_hash(new_password_request.new_pwd)
         with db_session:
             user = db.DB_User.get(email=email)
-            print(user)
             user.set(hashed_password=new_hash)
             commit()
     except Exception as e:

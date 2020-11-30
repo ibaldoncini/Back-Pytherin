@@ -111,17 +111,3 @@ async def remove_room_from_database(room: Room):
             delete(r for r in db.DB_Room if r.name == room_name)
     except Exception as e:
         print(e)
-
-
-@db_session
-async def dump_room(room: Room):
-    room_name = room.get_name()
-    if (db.exists("select * from DB_Room where name = $room_name")):
-        try:
-            room_tuple = db.get(
-                "select * from DB_Room where name = $room_name")
-            print(room_tuple)
-        except Exception as e:
-            print(e)
-    else:
-        return {"message": "boca"}
