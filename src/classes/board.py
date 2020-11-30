@@ -7,7 +7,6 @@ class Board:
     def __init__(self, n_of_players: int):
         self.de_proclaims: int = 0
         self.fo_proclaims: int = 0
-        self.chaos_counter: int = 0
         self.spells: Dict[Spell, int] = self.init_spells(n_of_players)
 
     def init_spells(self, n_of_players: int):
@@ -38,15 +37,6 @@ class Board:
 
     def get_fo_procs(self):
         return self.fo_proclaims
-
-    def get_chaos_counter(self):
-        return self.chaos_counter
-
-    def increase_chaos(self):
-        self.chaos_counter += 1
-
-    def reset_chaos(self):
-        self.chaos_counter = 0
 
     def proclaim(self, card: Card):
         if card == Card.FO:
