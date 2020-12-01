@@ -12,6 +12,7 @@ from classes.deck import Deck, Card
 from classes.game_status_enum import GamePhase
 from classes.spell import Spell
 from asyncio import sleep as async_sleep
+from time import sleep
 
 
 class Vote(Enum):
@@ -34,6 +35,10 @@ class Game:
         self.cards: List[Card] = self.deck.take_3_cards()
         self.votes: Dict[str, Vote] = dict()
         self.last_update = datetime.now()
+        self.casted_imperius_by: Player = None
+        self.chaos_counter: int = 0
+        self.investigated_players: List[Player] = list()
+        self.casted_expelliarmus: bool = False
 
     def init_players(self, users: List[str]):
         # Create empty players
@@ -65,7 +70,7 @@ class Game:
 
     def build_from_json(self, json):
         players = []
-        for user in self.users:
+        for user in json["player_list"]:
             new_player = Player(user)
             if user not in json["death_eaters"]:
                 new_player.set_loyalty(Loyalty.FENIX_ORDER)
@@ -77,11 +82,9 @@ class Game:
                 else:
                     new_player.set_role(Role.DEATH_EATER)
 
-            if user not in json["player_list"]:
-                new_player.kill()
-
             players.append(new_player)
 
+        self.chaos_counter = json["chaos"]
         self.minister = next(
             (p for p in self.players if p.get_user() == json["minister"]), None)
         self.director = next(
@@ -101,7 +104,7 @@ class Game:
             else:
                 cards.append(Card.DE)
         self.cards = cards
-
+        self.players = players
         self.deck.load_deck(json["deck_cards"])
         # Maybe set phase using the phase field in the json?
         if json["phase"] == GamePhase.PROPOSE_DIRECTOR.value:
@@ -122,12 +125,28 @@ class Game:
         It changes the minister just assigning the role to the next player alive
         in the list of players of the match.
         """
-        self.last_minister = self.minister
-        alive_players = list(
-            filter(lambda p: p.is_player_alive(), self.players))
-        last_minister_index = alive_players.index(self.last_minister)
-        new_minister_index = (last_minister_index + 1) % (len(alive_players))
+        if (self.casted_imperius_by is None):
+            alive_players = list(
+                filter(lambda p: (p.is_player_alive() or p == self.minister), self.players))
+
+            self.last_minister = self.minister
+            last_minister_index = alive_players.index(self.last_minister)
+            new_minister_index = (last_minister_index +
+                                  1) % (len(alive_players))
+        else:
+            alive_players = list(
+                filter(lambda p: (p.is_player_alive() or p == self.last_minister), self.players))
+
+            last_minister_index = alive_players.index(self.last_minister)
+            new_minister_index = (last_minister_index +
+                                  1) % (len(alive_players))
+            self.last_minister = self.minister
+            self.casted_imperius_by = None
+
         self.minister = alive_players[new_minister_index]
+
+    def get_nof_players(self):
+        return self.n_of_players
 
     def get_director_user(self):
         if self.director is None:
@@ -135,11 +154,11 @@ class Game:
         else:
             return (self.director.get_user())
 
-    def set_director(self, email):
-        if email is None:
+    def set_director(self, uname):
+        if uname is None:
             self.director = None
         else:
-            self.director = self.__get_player_by_email(email)
+            self.director = self.__get_player_by_uname(uname)
 
     def get_last_minister_user(self):
         if self.last_minister is None:
@@ -173,6 +192,12 @@ class Game:
     def discard(self, index):
         self.cards.pop(index)
 
+    def is_expelliarmus_casted(self):
+        return self.casted_expelliarmus
+
+    def cast_expelliarmus(self):
+        self.casted_expelliarmus = True
+
     def deal_cards(self):
         new_cards = self.deck.take_3_cards()
         self.cards = new_cards
@@ -192,13 +217,12 @@ class Game:
         alive_players = filter(lambda p: p.is_player_alive(), all_players)
         return list(map(lambda p: p.get_user(), alive_players))
 
-    # TO DO NOW WITH USERNAMES
-    def __get_player_by_email(self, email: str):
-        player = next(p for p in self.players if p.get_user() == email)
+    def __get_player_by_uname(self, uname: str):
+        player = next(p for p in self.players if p.get_user() == uname)
         return player
 
-    def get_player_role(self, email: str):
-        return self.__get_player_by_email(email).get_role()
+    def get_player_role(self, uname: str):
+        return self.__get_player_by_uname(uname).get_role()
 
     def get_de_list(self):
         filtered = filter(lambda p:  p.get_loyalty() ==
@@ -210,18 +234,17 @@ class Game:
         voldemort = next(p for p in self.players if p.is_voldemort())
         return voldemort.get_user()
 
-    #option : This parameter is neceessary to check if a player
-    #has already voted.
-    def get_votes(self,option = False):
-        #Not sure if the parentheses are necessary
+    # option : This parameter is neceessary to check if a player
+    # has already voted.
+    def get_votes(self, option=False):
         if ((len(self.get_alive_players()) == len(self.votes)
-            and self.phase == GamePhase.VOTE_DIRECTOR) or option):
+             and self.phase == GamePhase.VOTE_DIRECTOR) or option):
             return self.votes
         return {}
 
-    def register_vote(self, vote, uname : str):
+    def register_vote(self, vote, uname: str):
         #self.votes[uname] = vote
-        self.votes.update({uname : vote})
+        self.votes.update({uname: vote})
 
     def get_phase(self):
         return self.phase
@@ -230,54 +253,85 @@ class Game:
         self.last_update = datetime.now()
         self.phase = phase
 
+    def proc_top_card(self):
+        card = self.deck.take_card()
+        self.board.proclaim(card)
+        self.reset_chaos()
+
+    def get_chaos(self):
+        return self.chaos_counter
+
+    def reset_chaos(self):
+        self.chaos_counter = 0
+
+    def do_chaos(self):
+        self.proc_top_card()
+        # Just decrease the spell number
+        self.board.spell_check(self.n_of_players)
+
+    def increase_chaos(self):
+        if self.chaos_counter < 3:
+            self.chaos_counter += 1
+        pass  # ?
+
     async def compute_votes(self):
         votes = Counter(self.votes.values())
         lumos_count = votes['Lumos']
         nox_count = votes['Nox']
         # Wait so the players can see the votes
         await async_sleep(5)
-        if (lumos_count >= nox_count):
+        if (lumos_count > nox_count):
             if (self.director.is_voldemort() and self.board.get_de_procs() >= 3):
                 self.set_phase(GamePhase.DE_WON)
             else:
                 self.set_phase(GamePhase.MINISTER_DISCARD)
-
         else:
             self.set_director(None)
+            self.increase_chaos()
+            if self.get_chaos() == 3:
+                self.do_chaos()
             self.restart_turn()
 
     def proc_leftover_card(self):
         card = self.cards.pop(0)
         self.board.proclaim(card)
+        self.reset_chaos()
         self.deal_cards()
         self.executive_phase()
+
+    def get_top_card(self):
+        return self.deck[0]
 
     def restart_turn(self):
         self.last_director = self.director
         self.director = None
+        self.casted_expelliarmus = False
         self.votes.clear()
         self.change_minister()
         voldemort = next(p for p in self.players if p.is_voldemort())
 
         if self.board.get_de_procs() >= 6:
             self.set_phase(GamePhase.DE_WON)
-        elif (self.board.get_fo_procs() >= 5 or not voldemort.is_player_alive()):
+        elif self.board.get_fo_procs() >= 5 or not voldemort.is_player_alive():
             self.set_phase(GamePhase.FO_WON)
         else:
             self.set_phase(GamePhase.PROPOSE_DIRECTOR)
 
     def executive_phase(self):
-        spell = self.board.spell_check()
-        if (spell == Spell.DIVINATION):
+        spell = self.board.spell_check(self.n_of_players)
+        if spell == Spell.DIVINATION:
             self.set_phase(GamePhase.CAST_DIVINATION)
-        elif (spell == Spell.AVADA_KEDAVRA):
+        elif spell == Spell.AVADA_KEDAVRA:
             self.set_phase(GamePhase.CAST_AVADA_KEDAVRA)
+        elif spell == Spell.IMPERIUS:
+            self.set_phase(GamePhase.CAST_IMPERIUS)
+        elif spell == Spell.CRUCIO:
+            self.set_phase(GamePhase.CAST_CRUCIO)
         else:
             self.restart_turn()
 
     def divination(self):
         top_three = self.cards
-
         return top_three
 
     def avada_kedavra(self, target):
@@ -285,3 +339,46 @@ class Game:
             if target == player.get_user():
                 player.kill()
         self.restart_turn()
+
+    def imperius(self, casted_by, target):
+        for player in self.players:
+            if casted_by == player.get_user():
+                self.casted_imperius_by = player
+
+            if target == player.get_user():
+                self.last_director = self.director
+                self.director = None
+                self.last_minister = self.minister
+                self.minister = player
+                self.votes.clear()
+        self.set_phase(GamePhase.PROPOSE_DIRECTOR)
+
+    def get_investigated_players(self):
+        return self.investigated_players
+
+    def crucio(self, victim_uname: str):
+        victim = self.__get_player_by_uname(victim_uname)
+        self.investigated_players.append(victim_uname)
+        return victim.get_loyalty().value
+
+    def expelliarmus(self, vote):
+        if (vote == 'Lumos'):
+            self.cards = []
+            self.deal_cards()
+            self.increase_chaos()
+            if self.get_chaos() == 3:
+                self.do_chaos()
+            self.restart_turn()
+            pass
+        else:
+            self.set_phase(GamePhase.REJECTED_EXPELLIARMUS)
+            pass
+
+    def player_can_speak(self, user: str):
+        role_bool = user in [
+            self.get_minister_user(), self.get_director_user()]
+        phase_bool = self.get_phase() in [
+            GamePhase.MINISTER_DISCARD, GamePhase.DIRECTOR_DISCARD]
+        is_dead = not (self.__get_player_by_uname(user).is_player_alive())
+
+        return (not ((role_bool and phase_bool) or is_dead))

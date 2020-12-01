@@ -1,28 +1,26 @@
 from fastapi.testclient import TestClient
-from pony.orm import db_session, commit
-from api.models.base import db
 from test_main import test_app
 from test_setup import p, start_game, unames, vote
 
 client = TestClient(test_app)
 
 
-def test_all():
+def test_all_for_5():
     response_get_pregame1 = client.get(
-        "/test-game/game_state",
+        "/test-game-5/game_state",
         headers=p[0]
     )
-    assert response_get_pregame1.status_code == 200
     print(response_get_pregame1.json())
+    assert response_get_pregame1.status_code == 200
 
-    response_start = start_game(p[0], "test-game")
+    response_start = start_game(p[0], "test-game-5")
     print(response_start.json())
-    # assert response_start.status_code == 201
+    #assert response_start.status_code == 201
 
     voldemort_uname = ""
     for k in range(0, 5):
         response_get_game = client.get(
-            "/test-game/game_state",
+            "/test-game-5/game_state",
             headers=p[k]
         )
         assert response_get_game.status_code == 200
@@ -44,7 +42,7 @@ def test_all():
     while game_is_not_over:
         round_count += 1
         response_get_ingame = client.get(
-            "/test-game/game_state",
+            "/test-game-5/game_state",
             headers=p[0]
         )
         assert response_get_ingame.status_code == 200
@@ -58,67 +56,64 @@ def test_all():
         director_uname: str = unames[director_index]
         alive_lads = rta["player_list"]
 
-        respone_propose = client.put(
-            "/test-game/director",
-            json={"director_email": director_uname},
+        response_propose = client.put(
+            "/test-game-5/director",
+            json={"director_uname": director_uname},
             headers=p[minister_index]
         )
-        assert respone_propose.status_code == 201
+        if (response_propose.status_code != 201):
+            print(response_propose.json())
+        assert response_propose.status_code == 201
 
         for i in range(0, 5):
             if unames[i] in alive_lads:
-                if (i % 2):
-                    response = vote(
-                        header=p[i], vote="Nox", room_name="test-game")
-                else:
-                    response = vote(
-                        header=p[i], vote="Lumos", room_name="test-game")
+                response = vote(
+                    header=p[i], vote="Lumos", room_name="test-game-5")
                 assert response.status_code == 200
             else:
-                response = vote(header=p[i], vote="Nox", room_name="test-game")
+                response = vote(header=p[i], vote="Nox",
+                                room_name="test-game-5")
                 assert response.status_code == 409
 
         response_get_ingame2 = client.get(
-            "/test-game/game_state",
+            "/test-game-5/game_state",
             headers=p[0]
         )
         assert response_get_ingame2.status_code == 200
-        print("\nAfter the voting")
-        # print(response_get_ingame2.json())
 
         if de_score > 2 and voldemort_uname == director_uname:
-            # print("Death eaters won, voldi runs hogwarts")
+            print("Death eaters won, voldi runs hogwarts")
             game_is_not_over = False
             break
 
         response_get_cards1 = client.get(
-            "test-game/cards",
+            "test-game-5/cards",
             headers=p[minister_index]
         )
         assert response_get_cards1.status_code == 200
 
         response_discard1 = client.put(
-            "test-game/discard",
+            "test-game-5/discard",
             json={"card_index": 0},
             headers=p[minister_index]
         )
         assert response_discard1.status_code == 201
 
         response_get_cards2 = client.get(
-            "test-game/cards",
+            "test-game-5/cards",
             headers=p[director_index]
         )
         assert response_get_cards2.status_code == 200
 
         response_discard2 = client.put(
-            "test-game/discard",
+            "test-game-5/discard",
             json={"card_index": 0},
             headers=p[director_index]
         )
         assert response_discard2.status_code == 201
 
         response_post_proclamation = client.get(
-            "/test-game/game_state",
+            "/test-game-5/game_state",
             headers=p[0]
         )
         assert response_post_proclamation.status_code == 200
@@ -127,18 +122,18 @@ def test_all():
         fo_score = scores_state["fo_procs"]
 
         if de_score == 6:
-            # print("Death eaters won")
+            print("Death eaters won")
             game_is_not_over = False
             break
         elif fo_score == 5:
-            # print("Phoenix order won")
+            print("Phoenix order won")
             break
         else:
             pass
 
         if de_score == 3:
             response_cast_divination = client.get(
-                "/test-game/cast/divination",
+                "/test-game-5/cast/divination",
                 headers=p[minister_index]
             )
             if not divination_casted:
@@ -147,14 +142,14 @@ def test_all():
                 # print(response_cast_divination.json())
             else:
                 assert response_cast_divination.status_code == 405
-
             response_confirm_divination = client.put(
-                "/test-game/cast/confirm_divination",
+                "/test-game-5/cast/confirm_divination",
                 headers=p[minister_index]
             )
             if not divination_casted:
                 assert response_confirm_divination.status_code == 200
             else:
+
                 assert response_confirm_divination.status_code == 405
 
             divination_casted = True
@@ -163,18 +158,18 @@ def test_all():
             victim_index = (minister_index - 1) % 5
             victim_uname = unames[victim_index]
             response_cast_avada = client.put(
-                "/test-game/cast/avada-kedavra",
+                "/test-game-5/cast/avada-kedavra",
                 headers=p[minister_index],
-                json={"target_email": victim_uname}
+                json={"target_uname": victim_uname}
             )
             # print(response_cast_avada.json())
             assert response_cast_avada.status_code == 200
             avadas_avaliables -= 1
             if victim_uname == voldemort_uname:
-                # print("Voldemort died, F")
+                print("Voldemort died, F")
                 game_is_not_over = False
 
         # print("--------------------------------------------------")
 
 
-# test_all()
+# test_all_for_5()

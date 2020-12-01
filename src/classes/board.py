@@ -7,14 +7,21 @@ class Board:
     def __init__(self, n_of_players: int):
         self.de_proclaims: int = 0
         self.fo_proclaims: int = 0
-        self.chaos_counter: int = 0
         self.spells: Dict[Spell, int] = self.init_spells(n_of_players)
 
     def init_spells(self, n_of_players: int):
         if n_of_players >= 9:
-            spell_dict = {}
+            spell_dict = {
+                Spell.DIVINATION: 0,
+                Spell.AVADA_KEDAVRA: 2,
+                Spell.IMPERIUS: 1,
+                Spell.CRUCIO: 2}
         elif n_of_players >= 7:
-            spell_dict = {}
+            spell_dict = {
+                Spell.DIVINATION: 0,
+                Spell.AVADA_KEDAVRA: 2,
+                Spell.IMPERIUS: 1,
+                Spell.CRUCIO: 1}
         else:
             spell_dict = {
                 Spell.DIVINATION: 1,
@@ -31,26 +38,31 @@ class Board:
     def get_fo_procs(self):
         return self.fo_proclaims
 
-    def get_chaos_counter(self):
-        return self.chaos_counter
-
-    def increase_chaos(self):
-        self.chaos_counter += 1
-
-    def reset_chaos(self):
-        self.chaos_counter = 0
-
     def proclaim(self, card: Card):
         if card == Card.FO:
             self.fo_proclaims += 1
         else:
             self.de_proclaims += 1
 
-    def spell_check(self):
+    def spell_check(self, nof_players: int):
+
         de_procs = self.get_de_procs()
-        if (de_procs == 3 and self.spells[Spell.DIVINATION] > 0):
+
+        if (nof_players <= 6 and de_procs == 3 and self.spells[Spell.DIVINATION] > 0):
             self.spells[Spell.DIVINATION] -= 1
             return Spell.DIVINATION
+        elif (nof_players >= 7 and de_procs == 2 and self.spells[Spell.CRUCIO] > 0):
+            self.spells[Spell.CRUCIO] -= 1
+            return Spell.CRUCIO
+        elif (nof_players >= 7 and de_procs == 3 and self.spells[Spell.IMPERIUS] > 0):
+            self.spells[Spell.IMPERIUS] -= 1
+            return Spell.IMPERIUS
+        elif (nof_players >= 9 and de_procs == 1 and self.spells[Spell.CRUCIO] > 1):
+            self.spells[Spell.CRUCIO] -= 1
+            return Spell.CRUCIO
+        elif nof_players >= 9 and de_procs == 2 and self.spells[Spell.CRUCIO] > 0:
+            self.spells[Spell.CRUCIO] -= 1
+            return Spell.CRUCIO
         elif ((de_procs == 4 and self.spells[Spell.AVADA_KEDAVRA] > 1)
                 or (de_procs == 5 and self.spells[Spell.AVADA_KEDAVRA] > 0)):
             self.spells[Spell.AVADA_KEDAVRA] -= 1
