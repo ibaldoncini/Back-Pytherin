@@ -125,18 +125,24 @@ class Game:
         It changes the minister just assigning the role to the next player alive
         in the list of players of the match.
         """
-        self.last_minister = self.minister
-        alive_players = list(
-            filter(lambda p: p.is_player_alive(), self.players))
+        if (self.casted_imperius_by is None):
+            alive_players = list(
+                filter(lambda p: (p.is_player_alive() or p == self.minister), self.players))
 
-        if self.casted_imperius_by is None:
+            self.last_minister = self.minister
             last_minister_index = alive_players.index(self.last_minister)
+            new_minister_index = (last_minister_index +
+                                  1) % (len(alive_players))
         else:
-            last_minister_index = alive_players.index(self.casted_imperius_by)
+            alive_players = list(
+                filter(lambda p: (p.is_player_alive() or p == self.last_minister), self.players))
+
+            last_minister_index = alive_players.index(self.last_minister)
+            new_minister_index = (last_minister_index +
+                                  1) % (len(alive_players))
+            self.last_minister = self.minister
             self.casted_imperius_by = None
 
-        new_minister_index = (last_minister_index +
-                              1) % (len(alive_players))
         self.minister = alive_players[new_minister_index]
 
     def get_nof_players(self):
@@ -337,6 +343,7 @@ class Game:
         for player in self.players:
             if casted_by == player.get_user():
                 self.casted_imperius_by = player
+
             if target == player.get_user():
                 self.last_director = self.director
                 self.director = None

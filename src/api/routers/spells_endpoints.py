@@ -40,6 +40,7 @@ async def confirm_divination(room_name: str = Path(..., min_length=6, max_length
 
     if (phase == GamePhase.CAST_DIVINATION and username == minister):
         game.restart_turn()
+        room.post_message(f"{username} knows someone loyalty:")
         return {"message": "Divination confirmed, moving on"}
     else:
         raise HTTPException(
@@ -65,6 +66,8 @@ async def cast_avada_kedavra(body: TargetedSpellRequest,
                 detail="Player is already dead", status_code=409)
         else:
             game.avada_kedavra(body.target_uname)
+            room.post_message(
+                f"{username} killed {body.target_uname} in cold blood:")
             return {"message": "Successfully casted Avada Kedavra"}
     else:
         raise HTTPException(
@@ -76,7 +79,7 @@ async def cast_crucio(body: TargetedSpellRequest,
                       room_name: str = Path(...,
                                             min_length=6, max_length=20),
                       username: str = Depends(get_username_from_token)):
-    """ 
+    """
     Endpoint that casts the spell "crucio", revealing the loyalty of some
     player to the minister.
     THROWS:
@@ -84,7 +87,7 @@ async def cast_crucio(body: TargetedSpellRequest,
     400 if game is not in CAST_CRUCIO phase
     405 if who made the request is not the minister
     406 if the victim is the minister (minister voted himself)
-    409 if the playet is dead or was already investigated 
+    409 if the playet is dead or was already investigated
     """
     global hub
     room = check_game_preconditions(username, room_name, hub)
@@ -124,6 +127,7 @@ async def confirm_crucio(room_name: str = Path(..., min_length=6, max_length=20)
     minister = game.get_minister_user()
 
     if (phase == GamePhase.CAST_CRUCIO and username == minister):
+        room.post_message(f"{username} has tortured someone!")
         game.restart_turn()
         return {"message": "Crucio confirmed, moving on"}
     else:
@@ -150,6 +154,8 @@ async def cast_imperius(body: TargetedSpellRequest,
                 detail="You cant choose yourself", status_code=409)
         else:
             game.imperius(casted_by=minister, target=body.target_uname)
+            room.post_message(
+                f"{username} has choosen {body.target_uname} to be his successor!")
             return {"message": "Successfully casted Imperius"}
     else:
         raise HTTPException(
@@ -177,6 +183,7 @@ async def confirm_expelliarmus(body: VoteRequest,
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid selection")
         else:
             game.expelliarmus(body.vote)
+            room.post_message(f"{username} has repented proclaiming!")
             return {"message": "Expelliarmus! confirmation received"}
     else:
         raise HTTPException(
