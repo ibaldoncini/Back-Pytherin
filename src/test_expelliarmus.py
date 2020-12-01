@@ -70,6 +70,8 @@ def test_expelliarmus():
             json={"director_uname": director_uname},
             headers=p[minister_index]
         )
+        if (response_propose.status_code != 201):
+            print(response_propose.json())
         assert response_propose.status_code == 201
 
         for i in range(0, 10):
@@ -92,7 +94,7 @@ def test_expelliarmus():
         assert response_get_ingame2.status_code == 200
 
         if de_score > 2 and voldemort_uname == director_uname:
-            # print("Death eaters won, voldi runs hogwarts")
+            print("Death eaters won, voldi runs hogwarts")
             game_is_not_over = False
             break
 
@@ -179,11 +181,11 @@ def test_expelliarmus():
         fo_score = scores_state["fo_procs"]
 
         if de_score == 6:
-            # print("Death eaters won")
+            print("Death eaters won")
             game_is_not_over = False
             break
         elif fo_score == 5:
-            # print("Phoenix order won")
+            print("Phoenix order won")
             break
         else:
             pass
@@ -247,7 +249,7 @@ def test_expelliarmus():
             assert response_cast_avada.status_code == 200
             avadas_avaliables -= 1
             if victim_uname == voldemort_uname:
-                # print("Voldemort died, F")
+                print("Voldemort died, F")
                 game_is_not_over = False
 
         # print("--------------------------------------------------")

@@ -66,16 +66,14 @@ def test_all_for_10():
             json={"director_uname": director_uname},
             headers=p[minister_index]
         )
+        if (response_propose.status_code != 201):
+            print(response_propose.json())
         assert response_propose.status_code == 201
 
         for i in range(0, 10):
             if unames[i] in alive_lads:
-                if (not (i % 9)):
-                    response = vote(
-                        header=p[i], vote="Nox", room_name="test-game-10")
-                else:
-                    response = vote(
-                        header=p[i], vote="Lumos", room_name="test-game-10")
+                response = vote(
+                    header=p[i], vote="Lumos", room_name="test-game-10")
                 assert response.status_code == 200
             else:
                 response = vote(header=p[i], vote="Nox",

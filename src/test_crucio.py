@@ -47,12 +47,8 @@ def random_vote(alive_lads, room_n=TC, n_of_players=7):
     response = None
     for i in range(0, n_of_players):
         if unames[i] in alive_lads:
-            if (i % 2):
-                response = vote(
-                    header=p[i], vote="Nox", room_name=room_n)
-            else:
-                response = vote(
-                    header=p[i], vote="Lumos", room_name=room_n)
+            response = vote(
+                header=p[i], vote="Lumos", room_name=room_n)
             assert response.status_code == 200
         else:
             response = vote(header=p[i], vote="Nox",
@@ -152,8 +148,10 @@ def test_kys_5():
         alive_lads = rta["player_list"]
         de_procs = rta['de_procs']
 
-        respone_propose = propose_director(director_uname, minister_index)
-        assert respone_propose.status_code == 201
+        response_propose = propose_director(director_uname, minister_index)
+        if (response_propose.status_code != 201):
+            print(response_propose.json())
+        assert response_propose.status_code == 201
 
         if de_procs == 1:
             approve_formula(alive_lads)

@@ -56,21 +56,19 @@ def test_all_for_5():
         director_uname: str = unames[director_index]
         alive_lads = rta["player_list"]
 
-        respone_propose = client.put(
+        response_propose = client.put(
             "/test-game-5/director",
             json={"director_uname": director_uname},
             headers=p[minister_index]
         )
-        assert respone_propose.status_code == 201
+        if (response_propose.status_code != 201):
+            print(response_propose.json())
+        assert response_propose.status_code == 201
 
         for i in range(0, 5):
             if unames[i] in alive_lads:
-                if (not (i % 4)):
-                    response = vote(
-                        header=p[i], vote="Nox", room_name="test-game-5")
-                else:
-                    response = vote(
-                        header=p[i], vote="Lumos", room_name="test-game-5")
+                response = vote(
+                    header=p[i], vote="Lumos", room_name="test-game-5")
                 assert response.status_code == 200
             else:
                 response = vote(header=p[i], vote="Nox",
