@@ -357,6 +357,9 @@ class Game:
         if (vote == 'Lumos'):
             self.cards = []
             self.deal_cards()
+            self.increase_chaos()
+            if self.get_chaos() == 3:
+                self.do_chaos()
             self.restart_turn()
             pass
         else:
