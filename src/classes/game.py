@@ -256,6 +256,7 @@ class Game:
     def proc_top_card(self):
         card = self.deck.take_card()
         self.board.proclaim(card)
+        self.reset_chaos()
 
     def get_chaos(self):
         return self.chaos_counter
@@ -280,7 +281,6 @@ class Game:
         # Wait so the players can see the votes
         await async_sleep(5)
         if (lumos_count > nox_count):
-            self.reset_chaos()
             if (self.director.is_voldemort() and self.board.get_de_procs() >= 3):
                 self.set_phase(GamePhase.DE_WON)
             else:
@@ -295,6 +295,7 @@ class Game:
     def proc_leftover_card(self):
         card = self.cards.pop(0)
         self.board.proclaim(card)
+        self.reset_chaos()
         self.deal_cards()
         self.executive_phase()
 

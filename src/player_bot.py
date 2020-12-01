@@ -145,12 +145,12 @@ while True:
 
     elif (str(phase) == str(GamePhase.CAST_AVADA_KEDAVRA.value) and nick == minister):
         victim = f"player{randint(0, nof_players)}"
-        requests.put(f"{url}/{room_name}/cast/avada-kedavra",
-                     json={"target_uname": victim},
-                     headers=header)
         requests.put(f"{url}/{room_name}/chat",
                      json={
                          "msg": f"You’re a fool {victim}, and you will lose everything"},
+                     headers=header)
+        requests.put(f"{url}/{room_name}/cast/avada-kedavra",
+                     json={"target_uname": victim},
                      headers=header)
 
     elif (str(phase) == str(GamePhase.CONFIRM_EXPELLIARMUS.value) and nick == minister):
