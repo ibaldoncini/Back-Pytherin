@@ -144,7 +144,7 @@ while True:
                      headers=header)
 
     elif (str(phase) == str(GamePhase.CAST_AVADA_KEDAVRA.value) and nick == minister):
-        victim = f"player{randint(0, nof_players)}"
+        victim = f"player{randint(1, nof_players)}"
         requests.put(f"{url}/{room_name}/chat",
                      json={
                          "msg": f"You’re a fool {victim}, and you will lose everything"},
@@ -154,9 +154,8 @@ while True:
                      headers=header)
 
     elif (str(phase) == str(GamePhase.CONFIRM_EXPELLIARMUS.value) and nick == minister):
-        print("Something")
         requests.put(f"{url}/{room_name}/expelliarmus",
-                     json={"vote": vote},
+                     json={"vote": "Lumos"},
                      headers=header)
 
     elif (str(phase) == str(GamePhase.DE_WON.value) or str(phase) == str(GamePhase.FO_WON.value)):
