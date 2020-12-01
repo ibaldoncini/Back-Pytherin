@@ -183,7 +183,7 @@ async def confirm_expelliarmus(body: VoteRequest,
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid selection")
         else:
             game.expelliarmus(body.vote)
-            room.post_message(f"{username} has repented proclaiming!")
+            room.post_message(f"{username} has casted Expelliarmus!")
             return {"message": "Expelliarmus! confirmation received"}
     else:
         raise HTTPException(

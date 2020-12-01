@@ -12,7 +12,7 @@ Definition of constants and algorithms used in the json web token
 """
 SECRET_KEY = "ca26e6bfe7dccf96bb25c729b3ca09990341ca4a5c849959604f567ccae44425"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 90
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
